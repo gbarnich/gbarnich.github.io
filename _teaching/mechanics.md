@@ -8,6 +8,6 @@ date: "2026-02-01"
 # location: "City, Country"
 ---
 
-Lecture notes : [pdf](mechanics.pdf), [html](mechanics_html.html)
+Lecture notes : [pdf](mechanicsfiles/mechanics.pdf), [html](mechanicsfiles/mechanics_html.html)
 
 
