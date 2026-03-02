@@ -15,5 +15,5 @@ redirect_from:
 - symmetries and conservation laws
   
 ## Current Position
-Full Professor at [Université libre de Bruxelles(https://www.ulb.be/)]
-[Theoretical and Mathematical Physics(https://ptm.ulb.be/)]
+Full Professor at [Université libre de Bruxelles](https://www.ulb.be/)
+[Theoretical and Mathematical Physics](https://ptm.ulb.be/)
