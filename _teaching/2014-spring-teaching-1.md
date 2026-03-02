@@ -8,5 +8,5 @@ permalink: /teaching/mechanics
 # location: "City, Country"
 ---
 
-Lecture Notes for the course: [pdf](), [html]
+Lecture notes : [pdf](), [html]
 
