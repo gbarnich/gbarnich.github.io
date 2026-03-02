@@ -1,0 +1,1247 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Reduced and alternative variational principles</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-123"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Reduced and alternative variational principles ......
+-->
+<h3 id="autosec-123">Chapter&nbsp;<span class="sectionnumber">10&#x2003;</span>Reduced and alternative variational principles</h3>
+
+<a id="mechanics-autofile-10"></a>
+
+<a id="cha:reduc-vari-princ"></a>
+<!--
+...... section Routhian procedure for cyclic variables ......
+-->
+<h4 id="autosec-124"><span class="sectionnumber">10.1&#x2003;</span>Routhian procedure for cyclic variables</h4>
+<a id="mechanics-autopage-124"></a>
+
+
+<a id="sec:routh-proc-cycl"></a>
+
+<p>
+In a system with \(n\) Lagrange coordinates \(q^\alpha \), suppose that \(q^n\) is a cyclic (ignorable, kinosthenic) variable, and let us denote by \(q^{\bar \alpha }\) the first \(n-1\) Lagrange coordinates. Noether’s implies that \(p_n=
+\frac {\partial L}{\partial \dot q^n}=c_n\) is a constant of the motion. Suppose that this relation allows to express \(\dot q^n\) as a function of the other variables
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{0}\)</span>
+
+<!--
+
+
+                                                                                  q9n “ U n pq ᾱ , q9ᾱ , cn , tq.                                                      (10.1)                                --><a id="eq:2aa"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:2aa} \dot q^n=U^n(q^{\bar \alpha },\dot q^{\bar \alpha },c_n,t).
+\end{equation}
+
+</p>
+
+<p>
+Note that this implies that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{1}\)</span>
+
+<!--
+
+                                                                                      BL ˇˇ
+                                                                                                     “ cn .                                                              (10.2)                                --><a id="eq:467"></a><!--
+                                                                                      B q9n q9n “U n
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:467} \frac {\partial L}{\partial \dot q^n}\big |_{\dot q^n=U^n}=c_n.
+\end{equation}
+
+</p>
+
+<p>
+It follows that the Lagrangian equations of motion, i.e., a system of \(n\) differential equations of second order can be reduced to a system of \(n-1\) differential equations of second order.
+</p>
+
+<p>
+The Routhian procedure provides a reduced Lagrangian \(\bar L(q^{\bar \alpha },\dot q^{\bar \alpha },t)\) such that the reduced system are the Euler-Lagrange equations of the reduced Lagrangian. For the starting point
+variational principle, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{2}\)</span>
+
+<!--
+
+
+                                                                                                   δL α “ BL α ‰tf
+                                                                     ż tf              ż tf
+                                                                 δ           dt L “           dt        δq `       δq                                                      (10.3)                               --><a id="eq:67"></a><!--
+                                                                      ti                 ti        δq α      B q9α    ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:67} \delta \int ^{t_f}_{t_i}dt\, L=\int ^{t_f}_{t_i}dt\, \frac {\delta L}{\delta q^\alpha }\delta q^\alpha +{\big [\frac {\partial L}{\partial \dot q^\alpha
+}\delta q^\alpha \big ]}^{t_f}_{t_i}
+\end{equation}
+
+</p>
+
+<p>
+On a natural trajectory, this reduces to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{3}\)</span>
+
+<!--
+
+                                                                         ż tf
+                                                                                       “         ‰t       “    ‰t
+                                                                     δ           dt L « pᾱ δq ᾱ tfi ` cn δq n tfi ,                                                    (10.4)                                --><a id="eq:417"></a><!--
+                                                                            ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:417} \delta \int ^{t_f}_{t_i}dt\, L\approx {\big [p_{\bar \alpha }\delta q^{\bar \alpha }\big ]}^{t_f}_{t_i} +c_n{\big [\delta q^n\big ]}^{t_f}_{t_i},
+\end{equation}
+
+</p>
+
+<p>
+Since the last term can be written as \(\delta \int _{t_i}^{t_f}c_n\dot q^1\), this suggest that the appropriate reduced action principle, that gives rise to the reduced system of equations for arbitrary variations \(\delta q^{\bar
+\alpha }\) that vanish at the end points is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{4}\)</span>
+
+<!--
+
+
+                                                         L̄pq ᾱ , q9ᾱ , tq “ pL ´ pn q9n q|q9n “U n “ L|q9n “U n ´ cn U n .                                            (10.5)                                --><a id="eq:464"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:464} \boxed {\bar L(q^{\bar \alpha },\dot q^{\bar \alpha },t)=(L-p_n\dot q^n)|_{\dot q^n=U^n} =L|_{\dot q^n=U^n}-c_n U^n}.
+\end{equation}
+
+</p>
+
+<p>
+It is applicable for trajectories that have the same constant \(p_n\) than the natural trajectory. Indeed, the reduced system of equations is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{5}\)</span>
+
+<!--
+
+                                                         “ d BL ‰ˇ                                                    BL
+                                                                     ˇ n n n d n “ BL ˇ n n ,
+                                                                                            ˇ
+                                                                  ᾱ                     ᾱ
+                                                                                                                            “ cn ,                                       (10.6)                                --><a id="eq:466"></a><!--
+                                                          dt B q9     q
+                                                                      9 “U  q
+                                                                           ,: “ dt U B q9 q9 “U                       B q9n
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:466} \big [\frac {d}{dt}\frac {\partial L}{\partial \dot q^{\bar \alpha }}\big ] \big |_{\dot q^n=U^n,\ddot q^n=\frac {d}{dt}U^n} =\frac {\partial
+L}{\partial \dot q^{\bar \alpha }}\big |_{\dot q^n=U^n}, \quad \frac {\partial L}{\partial \dot q^n}=c_n,
+\end{equation}
+
+</p>
+
+<p>
+while the Euler-Lagrange equations for the reduced Lagrangian are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{6}\)</span>
+
+<!--
+
+                                                                             n           n‰                                 n         n
+                                  δ L̄    d “ BL ˇˇ            BL ˇˇ    BU        BU
+                                                                                             BL ˇˇ            BL ˇˇ    BU      BU
+                                                                                                                                     
+                              ´         “             n   n `        n
+                                                                       n      ´ c n        ´         n   n ´        n
+                                                                                                                       n     ` cn      “ 0,                             (10.7)                                --><a id="eq:465"></a><!--
+                                  δq ᾱ   dt B q9ᾱ q9 “U     q9n
+                                                                 q9 “U B q9ᾱ          ᾱ    Bq ᾱ q9 “U     q9n
+                                                                                                                 q9 “U Bq ᾱ        ᾱ
+                                                                                                                  
+                                                                                  B q9
+                                                              B                                              B                   
+                                                                                                                                 Bq
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:465} -\frac {\delta \bar L}{\delta q^{\bar \alpha }}=\frac {d}{dt} \big [\frac {\partial L}{\partial \dot q^{\bar \alpha }}\big |_{\dot q^n=U^n} +\cancel
+{\frac {\partial L}{\partial \dot q^{n}}\big |_{\dot q^n=U^n}\frac {\partial U^n}{\partial \dot q^{\bar \alpha }}} -\cancel {c_n\frac {\partial U^n}{\partial \dot
+q^{\bar \alpha }}}\big ]- \frac {\partial L}{\partial q^{\bar \alpha }}\big |_{\dot q^n=U^n} -\cancel {\frac {\partial L}{\partial \dot q^{n}}\big |_{\dot q^n=U^n}\frac
+{\partial U^n}{\partial q^{\bar \alpha }}} +\cancel {c_n \frac {\partial U^n}{\partial q^{\bar \alpha }}}=0,
+\end{equation}
+
+</p>
+
+<p>
+which indeed agree when using equation&nbsp;<span class="textup">(<a href="node-10.html#eq:467">10.2</a>)</span>.
+</p>
+
+<p>
+Finally, note that one may also arrive to the reduced action principle by using a Lagrange multiplier,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{7}\)</span>
+
+<!--
+
+
+                                                             Lλ pq ᾱ , q9ᾱ , q9n , t, λq “ L ´ pn q9n ´ λppn ´ cn q.                                                   (10.8)                                --><a id="eq:478"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:478} L^\lambda (q^{\bar \alpha },\dot q^{\bar \alpha },\dot q^n,t,\lambda )=L-p_n\dot q^n-\lambda (p_n-c_n).
+\end{equation}
+
+</p>
+<!--
+...... section Parametrized systems ......
+-->
+<h4 id="autosec-125"><span class="sectionnumber">10.2&#x2003;</span>Parametrized systems</h4>
+<a id="mechanics-autopage-125"></a>
+
+
+<a id="sec:parametrized-system"></a>
+
+<p>
+The solution of the Euler-Lagrange equations of motion may be given in parametrized form. Rather than using \(q^\alpha =q^\alpha (t)\), one introduces a parameter \(\tau \) and describes the solution in parametrized form through
+\(t=t(\tau ), q^\alpha =q^\alpha (\tau )\). If \(t&apos; =\frac {d t}{d\tau }\neq 0\), \(q^{\prime \alpha }=\frac {d q^\alpha }{d\tau }\), the appropriate variation principle involves as independent
+variable \(\tau \) and contains \(n+1\) Lagrange coordinates \(q^\alpha ,t\). It is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{8}\)</span>
+
+<!--
+
+                                                               ż τf
+                                                      S“              dτ LP ,     LP pq α , t, q 1α , t1 q “ t1 Lpq α , q9α , tq|q9α “ q1α .                                        (10.9)                --><a id="eq:2"></a><!--
+                                                                τi                                                                     t1
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:2} S=\int _{\tau _i}^{\tau _f} d\tau \, L^P,\quad L^P(q^\alpha ,t,q^{\prime \alpha },t^\prime )=t^\prime L(q^\alpha ,\dot q^\alpha ,t) |_{\dot q^\alpha
+=\frac {q^{\prime \alpha }}{t^\prime }}.
+\end{equation}
+
+</p>
+
+<p>
+Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{9}\)</span>
+
+<!--
+
+
+
+                                                                                                                   δLP     d 1 BL              1        BL
+                                                                                                                 ´      “    rt                   s ´ t1 α |q9α “ q1α ,
+                                                                                                                   δq α   dτ B q9α q9α “ q1α1 t 1       Bq         t1
+                                                                                                                                          t
+                                                                                                                                                                       (10.10)                         --><a id="eq:468"></a><!--
+                                                                                                                   δLP     d                  BL ˇˇ          q 1α        BL ˇ
+                                                                                                                 ´      “    pL|q9α “ q1α ´ α q9α “ q1α 1 q ´ t1 ˇq9α “ q1α .
+                                                                                                                    δt    dτ           t1     B q9        t1  t          Bt    t1
+
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:468} \begin{split} &amp;-\frac {\delta L^P}{\delta q^\alpha }=\frac {d}{d\tau }[\cancel {t^\prime }\frac {\partial L}{\partial \dot q^\alpha } _{\dot
+q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}\cancel {\frac {1}{t^\prime }}]-t^\prime \frac {\partial L}{\partial q^\alpha }|_{\dot q^\alpha =\frac {q^{\prime \alpha
+}}{t^\prime }},\\ &amp;-\frac {\delta L^P}{\delta t}=\frac {d}{d\tau }(L|_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }} -\frac {\partial L}{\partial \dot
+q^\alpha }\big |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}\frac {q^{\prime \alpha }}{t^\prime }) -t^\prime \frac {\partial L}{\partial t}\big |_{\dot
+q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+When using that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{10}\)</span>
+
+<!--
+
+
+                                              d2 α    d q 1α     1 d q 1α      q 2α    q 1α t2
+                                                  q “   p    q “      p   q “        ´         ,                                                                   (10.11)                             --><a id="eq:469"></a><!--
+                                              dt2     dt t1      t1 dτ t1     pt1 q2   pt1 q3
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:469} \frac {d^2}{dt^2}q^\alpha =\frac {d}{dt}(\frac {q^{\prime \alpha }}{t^\prime }) =\frac {1}{t^\prime }\frac {d}{d\tau }(\frac {q^{\prime \alpha
+}}{t^\prime }) =\frac {q^{\prime \prime \alpha }}{(t^\prime )^2}-\frac {q^{\prime \alpha }t^{\prime \prime }}{(t^{\prime })^3},
+\end{equation}
+
+</p>
+
+<p>
+the first \(n\) Euler-Lagrange equations associated to&nbsp;<span class="textup">(<a href="node-10.html#eq:468">10.10</a>)</span> become
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{11}\)</span>
+
+<!--
+
+                                                            “ δL ‰ˇ
+                                                       t1         ˇ    q 1α       q 2α    q 1α t2 “ 0,                                                             (10.12)                             --><a id="eq:470"></a><!--
+                                                             δq α q9α “ t1 ,:qα “ pt1 q2 ´ pt1 q3
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:470} t^\prime \big [\frac {\delta L}{\delta q^\alpha }\big ]\big |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }, \ddot q^\alpha =\frac {q^{\prime
+\prime \alpha }}{(t^\prime )^2}-\frac {q^{\prime \alpha }t^{\prime \prime }}{(t^{\prime })^3}}=0,
+\end{equation}
+
+</p>
+
+<p>
+and are thus equivalent to the original Euler-Lagrange equations of motion. This is the same reasoning as in the previous discussion concerning a change of the independent variable.
+</p>
+
+<p>
+When working out the derivative with respect to \(\tau \) and using the previous discussion, one finds for the last expression of&nbsp;<span class="textup">(<a href="node-10.html#eq:468">10.10</a>)</span>,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{12}\)</span>
+
+<!--
+
+
+                                                     δLP         “ δL ‰ˇ
+                                                 ´       “ ´q 1α       ˇ    q 1α       q 2α    q 1α t2                                                             (10.13)                             --><a id="eq:471"></a><!--
+                                                      δt          δq α q9α “ t1 ,:qα “ pt1 q2 ´ pt1 q3
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:471} -\frac {\delta L^P}{\delta t}=-q^{\prime \alpha }\big [\frac {\delta L}{\delta q^\alpha }\big ] \big |_{\dot q^\alpha =\frac {q^{\prime \alpha
+}}{t^\prime }, \ddot q^\alpha =\frac {q^{\prime \prime \alpha }}{(t^\prime )^2}-\frac {q^{\prime \alpha }t^{\prime \prime }}{(t^{\prime })^3}}
+\end{equation}
+
+</p>
+
+<p>
+which vanishes as a consequence of the previous \(n\) equations.
+</p>
+
+<p>
+Note that \(L^P\) does not define a regular system. Indeed, when denoting the \(n+1\) Lagrange coordinates \((t,q^\alpha )\) by \(q^A\), \(L^P(q^A,q^{\prime A})\) is homogeneous of degree \(1\) in the generalized velocities
+\(q^{\prime A}\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{13}\)</span>
+
+<!--
+
+
+                                                            LP pq A , µq 1A q “ µLP pq A , q 1A q,                                                                 (10.14)                             --><a id="eq:472"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:472} L^P(q^A,\mu q^{\prime A})=\mu L^P(q^A,q^{\prime A}),
+\end{equation}
+
+</p>
+
+<p>
+which implies, by differentiation with respect to \(\mu \) and setting \(\mu =0\) (Euler’s theorem for homogeneous functions) that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{14}\)</span>
+
+<!--
+
+
+                                                                              BLP
+                                                                       q 1B         “ LP .                                                                         (10.15)                             --><a id="eq:473"></a><!--
+                                                                              Bq 1B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:473} q^{\prime B}\frac {\partial L^P}{\partial q^{\prime B}}=L^P.
+\end{equation}
+
+</p>
+
+<p>
+Another derivation with respect to \(q^{\prime A}\) yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{15}\)</span>
+
+<!--
+
+
+                                                              B 2 LP 1B BLP          BLP
+                                                                         q `       “       ,                                                                       (10.16)                             --><a id="eq:474"></a><!--
+                                                             Bq 1A Bq 1B     Bq 1B   Bq 1B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:474} \frac {\partial ^2 L^P}{\partial q^{\prime A}\partial q^{\prime B}}q^{\prime B}+\cancel {\frac {\partial L^P}{\partial q^{\prime B}}} =\cancel {\frac
+{\partial L^P}{\partial q^{\prime B}}},
+\end{equation}
+
+</p>
+
+<p>
+which means that \(q^{\prime B}\) is an eigenvector with zero eigenvalue of the matrix \(\frac {\partial ^2 L^P}{\partial q^{\prime A}\partial q^{\prime B}}\), so that this matrix is degenerate.
+</p>
+<!--
+...... section Maupertius’/ Jacobi’s principle ......
+-->
+<h4 id="autosec-126"><span class="sectionnumber">10.3&#x2003;</span>Maupertius’/ Jacobi’s principle</h4>
+<a id="mechanics-autopage-126"></a>
+
+
+<a id="sec:maupertius-principle"></a>
+
+<p>
+If \(L\) does not depend explicitly on time \(t\), \(t\) is a cyclic variable of the variational principle defined by \(L^P\). The associated conserved momentum, \(p_t\) is minus the energy of the original variational principle defined by \(L\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{16}\)</span>
+
+<!--
+
+
+                                                     BLP               α ˇ
+                                                                          ˇ             ˇ
+                                              pt “        “ pL ´ p α q
+                                                                     9  q    α q 1α “ ´E α
+                                                                           q9 “ t1
+                                                                                        ˇ      1α “ ´E,
+                                                                                         q9 “ qt1
+                                                                                                                                                    (10.17)                                                                --><a id="eq:475"></a><!--
+                                                      Bt1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:475} p_t=\frac {\partial L^P}{\partial t^\prime } = (L-p_\alpha \dot q^\alpha )\big |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }} =-E\big |_{\dot
+q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}=-\mathbf E,
+\end{equation}
+
+</p>
+
+<p>
+for some constant \(\mathbf E\). If the original Lagrangian was regular, one may solve this equation for \(t^\prime =T^\prime (q^\alpha ,q^{\prime \alpha })\) provided that not all generalized velocities vanish. Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{17}\)</span>
+
+<!--
+
+
+                                B 2 LP      BL     BL       α B L
+                                                                   2                    1β            2
+                                                                           ˇ α q1α p´ q q “ 1 pq9α B L q9β qˇ α q1α .
+                                                                           ˇ                                  ˇ
+                                        “ p    α
+                                                  ´    α
+                                                          ´ q
+                                                            9             q
+                                                                   α B q9β q9 “ t1                    α B q9β
+                                                                                                                                                    (10.18)                                                                --><a id="eq:477"></a><!--
+                                pBt1 q2    B q
+                                              9     B
+                                                     q
+                                                      9        B q
+                                                                 9                   pt 1 q2 t1   B q
+                                                                                                    9           q9 “ t1
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:477} \frac {\partial ^2 L^P}{(\partial t^\prime )^2}=(\cancel {\frac {\partial L}{\partial \dot q^\alpha }} -\cancel {\frac {\partial L}{\partial \dot
+q^\alpha }} -\dot q^\alpha \frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }) \big |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}(-\frac
+{q^{\prime \beta }}{(t^\prime )^2})= \frac {1}{t^\prime } (\dot q^\alpha \frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }\dot q^\beta ) \big |_{\dot
+q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}.
+\end{equation}
+
+</p>
+
+<p>
+In this case, the variational principle of Maupertius/Jacobi is obtained by applying the Routhian procedure to \(L^P\). It gives rise to the reduced variational principle, applicable for trajectories with the same energy \(\mathbf E\) than the natural
+trajectory,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{18}\)</span>
+
+<!--
+
+                                                                                             ˇ
+                                                L̄P “ T 1 L|q9α “ q1α ` E|q9α “ q1α T 1 “ pα ˇq9α “ q1α q 1α .                                      (10.19)                                                                --><a id="eq:476"></a><!--
+                                                                           T1                     T1                 T1
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:476} \bar L^P=T^\prime L|_{\dot q^\alpha =\frac {q^{\prime \alpha }}{T^\prime }}+E|_{\dot q^\alpha =\frac {q^{\prime \alpha }}{T^\prime }}T^\prime =p_\alpha
+\big |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{T^\prime }}q^{\prime \alpha }.
+\end{equation}
+
+</p>
+
+<p>
+when taking into account&nbsp;<span class="textup">(<a href="node-10.html#eq:475">10.17</a>)</span>.
+</p>
+
+<p>
+For an explicitly time-independent \(L\) of the form&nbsp;<span class="textup">(<a href="node-9.html#eq:71">9.13</a>)</span>, one finds from&nbsp;<span class="textup">(<a
+href="node-10.html#eq:475">10.17</a>)</span> that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{19}\)</span>
+
+<!--
+
+                                                                             d
+                                              1      1α 1β 1 ´2          1     gαβ q 1α q 1β
+                                                gαβ q q pT q ` V “ E ùñ T “ ˘                ,                                                      (10.20)                                                                --><a id="eq:482"></a><!--
+                                              2                                2pE ´ V q
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:482} \frac 12 g_{\alpha \beta }q^{\prime \alpha }q^{\prime \beta }(T^{\prime })^{-2}+V=\mathbf E\Longrightarrow T^{\prime }=\pm \sqrt {\frac {g_{\alpha \beta
+}q^{\prime \alpha }q^{\prime \beta }}{2(\mathbf E-V)}},
+\end{equation}
+
+</p>
+
+<p>
+where the sign follows that of \(t^\prime \). This implies on the one hand that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{20}\)</span>
+
+<!--
+
+                                                                 żτ             d                   ż
+                                                                            1       gαβ q 1α q 1β        ds
+                                               t ´ ti “ ˘             dτ                          “˘ a           ,                                  (10.21)                                                                --><a id="eq:484"></a><!--
+                                                                 τi                 2pE ´ V q        γ 2pE ´ V q
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:484} t-t_i=\pm \int ^{\tau }_{\tau _i}d\tau ^\prime \sqrt {\frac {g_{\alpha \beta }q^{\prime \alpha }q^{\prime \beta }}{2(\mathbf E-V)}} =\pm \int _\gamma
+\frac {\overline {ds}}{\sqrt {2(\mathbf E-V)}},
+\end{equation}
+
+</p>
+
+<p>
+where \(\gamma \) is a path from some initial configuration \(q^\alpha _i\) to a final confiuration \(q^\alpha \), and on the other that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{21}\)</span>
+
+<!--
+
+                                            1                              a           b
+                                    L̄P “      gαβ q 1α 1β
+                                                       q   ` A α q 1α
+                                                                      “ ˘σ  |2pE ´ V q| |gαβ q 1α q 1β | ` Aα q 1α ,                                (10.22)                                                                --><a id="eq:481"></a><!--
+                                            T1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:481} \bar L^P=\frac {1}{T^\prime }g_{\alpha \beta }q^{\prime \alpha }q^{\prime \beta }+A_\alpha q^{\prime \alpha } =\pm \sigma \sqrt {|2(\mathbf E-V)|}\sqrt
+{|g_{\alpha \beta }q^{\prime \alpha }q^{\prime \beta }|}+A_\alpha q^{\prime \alpha },
+\end{equation}
+
+</p>
+
+<p>
+where \(\sigma \) denotes the sign of \(g_{\alpha \beta }q^{\prime \alpha }q^{\prime \beta }\) and
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{22}\)</span>
+
+<!--
+
+                                                                 ż               a
+                                                                      “                                  ‰
+                                                      S̄ P “              ˘σ      |2pE ´ V q|ds ` Aα dq α .                                         (10.23)                                                                --><a id="eq:483"></a><!--
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:483} \boxed {\bar S^P=\int \big [\pm \sigma \sqrt {|2(\mathbf E-V)|}\overline {ds}+A_\alpha dq^{\alpha }\big ]}.
+\end{equation}
+
+</p>
+
+<p>
+The Lagrange multiplier version of Maupertius’/Jacobi’s variational principle is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{23}\)</span>
+
+<!--
+
+                                                             ż
+                                                                   “                                       ‰
+                                                 S P,λ “         dτ pα |q9α “ q1α q 1α ` λrE|q9α “ q1α ´ Es .                                       (10.24)                                                                --><a id="eq:488"></a><!--
+                                                                                         t1                    t1
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:488} S^{P,\lambda }=\int d\tau \,\big [p_\alpha |_{\dot q^\alpha =\frac {q^{\prime \alpha }}{t^\prime }}q^{\prime \alpha } +\lambda [E|_{\dot q^\alpha =\frac
+{q^{\prime \alpha }}{t^\prime }}-\mathbf E]\big ].
+\end{equation}
+
+</p>
+
+<p>
+Remarks:
+</p>
+
+<p>
+(i) In particular, if \(V=0=A_\alpha \), the variational principle of Maupertius/Jacobi for \(S=\int dt\, \frac {1}{2}g_{\alpha \beta }\dot q^\alpha \dot q^\beta \) reduces to the reparametrization invariant variational
+principle associated to \(\bar S^P=\pm \sigma \sqrt {2|\mathbf E|} \int \overline {ds}\).
+</p>
+
+<p>
+(ii) In this context, a systematic derivation of the solution to the brachystochrone&nbsp;<a href="node-5.html#sec:statement-problem">5.2.1</a> starting from Hamilton’s principle is possible. The appropriate action is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{24}\)</span>
+
+<!--
+
+                                                                           ż t0
+                                                                                         “1                        ‰
+                                                        Srx, zs “                   dt        mpx9 2 ` z9 2 q ´ mgz ,                               (10.25)                                                                --><a id="eq:485"></a><!--
+                                                                            t˚            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:485} S[x,z]=\int _{t_*}^{t_0} dt\, \big [\frac 12 m (\dot x^2+\dot z^2)-mgz\big ],
+\end{equation}
+
+</p>
+
+<p>
+with initial and final conditions \(x(t_*)=x^*,z(t_*)=z^*,x(t_0)=0,z(t_0)=0\). The objective is to determine the spatial path \(x(z)\) such that the time of descent is minimal. In order to use conservation of energy, the use of
+Maupertius’/Jacobi’s principle is appropriate. The initial conditions imply that \(\mathbf E=mgz^*\), so that equation&nbsp;<span class="textup">(<a href="node-10.html#eq:484">10.21</a>)</span> yields for the time of
+descent between \((x^*,z^*)\) and \((0,0)\)
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{25}\)</span>
+
+<!--
+
+                                                                          ż0             d
+                                                                                               1 ` px1 q2            dx
+                                                  t0 ´ t ˚ “ ´                    dz                      ,   x1 “      ,                           (10.26)                                                                --><a id="eq:489"></a><!--
+                                                                           z˚                 2gpz ˚ ´ zq            dz
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:489} t_0-t_*=-\int _{z_*}^0dz\, \sqrt {\frac {1+(x^\prime )^2}{2g(z^*-z)}},\quad x^\prime =\frac {dx}{dz},
+\end{equation}
+
+</p>
+
+<p>
+in agreement with equation&nbsp;<span class="textup">(<a href="node-5.html#eq:231">5.48</a>)</span>.
+</p>
+
+<p>
+The remaining equations are the Euler-Lagrange equations associated to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{26}\)</span>
+
+<!--
+
+                                                                           ż         a           a
+                                                      S̄ P “ ´m                 dz    2gpz ˚ ´ zq 1 ` px1 q2 .                                      (10.27)                                                                --><a id="eq:486"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:486} \bar S^P=-m\int dz \sqrt {2g(z^*-z)}\sqrt {1+(x^\prime )^2}.
+\end{equation}
+
+</p>
+
+<p>
+Since \(x\) is a cyclic variable,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{27}\)</span>
+
+<!--
+
+                                                                     a                    x1
+                                                         px “              2gpz ˚ ´ zq a           “ d,                                             (10.28)                                                                --><a id="eq:487"></a><!--
+                                                                                        1 ` px1 q2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:487} p_x=\sqrt {2g(z^*-z)}\frac {x^\prime }{\sqrt {1+(x^\prime )^2}}=d,
+\end{equation}
+
+</p>
+
+<p>
+for some constant \(d\geq 0\). The sign is fixed by requiring that \(x\) increases when \(z\) increases. Taking the square yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{28}\)</span>
+
+<!--
+
+
+                                                                      d2                               2R1                  d2
+                                             px1 q2 “                                     “                    ,    2R1 “                           (10.29)                                                                --><a id="eq:490"></a><!--
+                                                        2gpz ˚ ´ zq ´ d2                       z ˚ ´ z ´ 2R1                2g
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:490} (x^\prime )^2=\frac {d^2}{2g(z^*-z)-d^2}=\frac {2R^\prime }{z^*-z-2R^\prime },\quad 2R^\prime =\frac {d^2}{2g}
+\end{equation}
+
+</p>
+
+<p>
+Through integration, one then finds
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{29}\)</span>
+
+<!--
+
+                                                        żz           ?            ż z´z˚      ?
+                                                                       2R1                      2R1
+                                            x ´ x˚ “        dz 1 ? ˚          “ ´        dZ ?                                                       (10.30)                                                                --><a id="eq:491"></a><!--
+                                                         z˚       z ´ z ´ 2R1      0          Z ´ 2R1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:491} x-x^*=\int ^z_{z^*}dz&apos; \frac {\sqrt {2R^\prime }}{\sqrt {z^*-z-2R^\prime }}=- \int ^{z-z^*}_{0}dZ \frac {\sqrt {2R^\prime }}{\sqrt {Z-2R^\prime }}
+\end{equation}
+
+</p>
+
+<p>
+Setting \(Z=R^\prime (1-\cos \theta )=2R^\prime \sin ^2\frac {\theta }{2}\).
+</p>
+
+<p>
+solve this to find \(x=x(z;x^*,z^*,c&apos;)\), and then compute the time of fall on-shell, then extremize it
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

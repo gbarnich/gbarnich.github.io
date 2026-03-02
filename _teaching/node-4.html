@@ -1,0 +1,1535 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Lagrangian mechanics</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-38"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Lagrangian mechanics ......
+-->
+<h3 id="autosec-38">Chapter&nbsp;<span class="sectionnumber">4&#x2003;</span>Lagrangian mechanics</h3>
+
+<a id="mechanics-autofile-4"></a>
+<!--
+...... section Lagrange coordinates ......
+-->
+<h4 id="autosec-39"><span class="sectionnumber">4.1&#x2003;</span>Lagrange coordinates</h4>
+<a id="mechanics-autopage-39"></a>
+
+
+<a id="sec:lagrange-coordinates"></a>
+
+<p>
+In the case of \(r\) independent holonomic constraints,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{0}\)</span>
+
+<!--
+
+
+                                                     Gm pxa , tq “ 0,       m “ 1, . . . , r,                                      (4.1)                                                                           --><a id="eq:149"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:149} G_m(x^a,t)=0,\quad m=1,\dots , r,
+\end{equation}
+
+</p>
+
+<p>
+that satisfy the regularity assumptions, there exists locally a change of coordinates
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{1}\)</span>
+
+<!--
+
+
+                                      xa “ xa pq b , tq,    q a “ q a pxb , tq,   a, b “ 1, . . . , 3N “ n,                        (4.2)                                                                           --><a id="eq:150"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:150} x^a=x^a(q^b,t),\quad q^a=q^a(x^b,t),\quad a,b=1,\dots , 3\mathcal {N}=n,
+\end{equation}
+
+</p>
+
+<p>
+such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{2}\)</span>
+
+<!--
+
+                                          "
+                                              q a “ q n´r`m “ Gm , a “ n ´ r ` 1, . . . , n,
+                                                                                                                                   (4.3)                                                                           --><a id="eq:151"></a><!--
+                                              q a “ q α , a, α “ 1, . . . , n ´ r.
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:151}\left \{ \begin{array}{l} q^a=q^{n-r+m}=G_m,\quad a=n-r+1,\dots ,n,\\ q^a=q^\alpha ,\quad a,\alpha =1,\dots ,n-r.                                                                \end {array}\right .
+\end{equation}
+
+</p>
+
+<p>
+The \(q^\alpha \) are the independent coordinates, also called Lagrange coordinates. Satisfying the constraints in this coordinate system means to put the last \(r\) coordinates to \(0\), \(q^{n-r+m}=0\). Furthermore, virtual displacements that are
+comptabible with the constraints satisfy \(\delta q^{n-r+m}=0\) while the \(\delta q^\alpha \) are arbitrary and unconstrained. In terms of the old variables, we thus have that, when the constraints hold, variations compatible with the
+constraints are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{3}\)</span>
+
+<!--
+
+                                                                   Bxa ˇˇ
+                                                           δxa «                  δq α .                                           (4.4)                                                                           --><a id="eq:152"></a><!--
+                                                                   Bq α qn´r`m “0
+                                                                        ˇ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:152} \delta x^a\approx \frac {\partial x^a}{\partial q^\alpha }\Big |_{q^{n-r+m}=0}\delta q^\alpha .
+\end{equation}
+
+</p>
+<!--
+...... section Lagrange equations ......
+-->
+<h4 id="autosec-40"><span class="sectionnumber">4.2&#x2003;</span>Lagrange equations</h4>
+<a id="mechanics-autopage-40"></a>
+
+
+<a id="sec:lagrange-equations"></a>
+
+<p>
+In terms of Lagrange coordinates, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{4}\)</span>
+
+<!--
+
+
+                                                          a       α                               Bxa
+                                              δ W « Fa δx « Qα δq ,                  Qα “ Fa         | n´r`m “0 ,                     (4.5)                                                                 --><a id="eq:153"></a><!--
+                                                                                                  Bq α q
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:153} \cancel {\delta } W\approx F_a \delta x^a \approx Q_\alpha \delta q^\alpha ,\quad Q_\alpha = F_a \frac {\partial x^a}{\partial q^\alpha
+}|_{q^{n-r+m}=0},
+\end{equation}
+
+</p>
+
+<p>
+where \(Q_\alpha \) is called the generalized force vector of Lagrange. For notational simplicity, we omit the bar with the indication that one should impose \(q^{n-r+m}=0\). In order to work out the kinetic energy \(T=\frac 12
+m_{(a)}\dot x_a\dot x^a\), in terms of the Lagrange coordinates, one uses
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{5}\)</span>
+
+<!--
+
+                                                                                 Bxa β Bxa
+                                                                     x9 a “           q9 `    ,                                        (4.6)                                                                 --><a id="eq:166"></a><!--
+                                                                                 Bq β      Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:166} \dot x^a=\frac {\partial x^a}{\partial q^\beta }\dot q^\beta +\frac {\partial x^a}{\partial t},
+\end{equation}
+
+</p>
+
+<p>
+so that the kinetic energy becomes explicitly
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{6}\)</span>
+
+<!--
+
+                                          1       Bxa      Bxa 2          1 Bxa Bxa α β Bxa Bxa α 1 Bxa Bxa
+                    T pq α , q9α , tq “     mpaq p α q9α `     q “ mpaq r             q9 q9 ` α    q9 `         s,                     (4.7)                                                                 --><a id="eq:154"></a><!--
+                                          2       Bq        Bt            2 Bq α Bq β        Bq Bt      2 Bt Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:154} T(q^\alpha ,\dot q^\alpha ,t)=\frac 12 m_{(a)}(\frac {\partial x^a}{\partial q^\alpha }\dot q^\alpha +\frac {\partial x^a}{\partial t})^2 =m_{(a)}[\frac
+12 \frac {\partial x_a}{\partial q^\alpha }\frac {\partial x^a}{\partial q^\beta }\dot q^\alpha \dot q^\beta + \frac {\partial x_a}{\partial q^\alpha }\frac {\partial
+x^a}{\partial t}\dot q^\alpha +\frac 12 \frac {\partial x_a}{\partial t}\frac {\partial x^a}{\partial t}],
+\end{equation}
+
+</p>
+
+<p>
+while its variation is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{7}\)</span>
+
+<!--
+
+                                              BT α     BT          BT   d BT            d BT
+                                      δT “         δq ` α δ q9α “ p α ´          qδq α ` p α δq α q.                                   (4.8)                                                                 --><a id="eq:155"></a><!--
+                                              Bq α     B q9        Bq   dt B q9α        dt B q9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:155} \delta T=\frac {\partial T}{\partial q^\alpha }\delta q^\alpha +\frac {\partial T}{\partial \dot q^\alpha }\delta \dot q^\alpha =(\frac {\partial
+T}{\partial q^\alpha } -\frac {d}{dt}\frac {\partial T}{\partial \dot q^\alpha })\delta q^\alpha +\frac {d}{dt}(\frac {\partial T}{\partial \dot q^\alpha }\delta
+q^\alpha ).
+\end{equation}
+
+</p>
+
+<p>
+For any function \(F(q^\alpha ,\dot q^\alpha ,t)\), the Euler-Lagrange derivative is defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{8}\)</span>
+
+<!--
+
+                                                                     δF    BF  d BF
+                                                                          “ α´          .                                              (4.9)                                                                 --><a id="eq:165"></a><!--
+                                                                     δq α  Bq  dt B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:165} \frac {\delta F}{\delta q^\alpha }=\frac {\partial F}{\partial q^\alpha } -\frac {d}{dt}\frac {\partial F}{\partial \dot q^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+Again, in the context of Hamilton’s or the least action principle, the last term of <span class="textup">(<a href="node-4.html#eq:155">4.8</a>)</span> does not contribute when restricting oneself to variations vanishing at the
+end points. Hamilton’s principle then becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{9}\)</span>
+
+<!--
+
+                                                          ż tf
+                                                                         “ δT        ‰
+                                                                    dt           ` Qα δq α ptq “ 0,                                  (4.10)                                                                  --><a id="eq:156"></a><!--
+                                                               ti         δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:156} \int ^{t_f}_{t_i} dt\ \big [\frac {\delta T}{\delta q^\alpha }+Q_\alpha \big ] \delta q^\alpha (t)=0,
+\end{equation}
+
+</p>
+
+<p>
+for all unconstrained \(\delta q^\alpha (t)\) (that vanish at the end points). The du Bois-Reymond lemma then implies the Lagrange equations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{10}\)</span>
+
+<!--
+
+
+                                                                           δT
+                                                                                “ ´Qα .                                              (4.11)                                                                  --><a id="eq:157"></a><!--
+                                                                           δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:157} \boxed {\frac {\delta T}{\delta q^\alpha }=-Q_\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+That these differential equations are equivalent to Newton’s equations for ideal holonomic constraints can also be seen directly as follows. One starts from
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{11}\)</span>
+
+<!--
+
+                                                           "
+                                                                         :a “ Fa ` µm BG
+                                                                    mpaq x              m
+                                                                                      Bxa .                                          (4.12)                                                                  --><a id="eq:158"></a><!--
+                                                                    Gm “ 0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:158}\left \{ \begin{array}{l} m_{(a)}\ddot x_a=F_a+\mu ^m\frac {\partial G_m}{\partial x^a}\\ G_m=0 \end {array}\right ..
+\end{equation}
+
+</p>
+
+<p>
+The first set of equations are contracted with \(\frac {\partial x^a}{\partial q^\alpha }\), and then the constrained are imposed \(q^{n-r+m}=0\). The constraints are then trivially fulfilled. When using that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{12}\)</span>
+
+<!--
+
+                                                                          BGm Bxa
+                                                                                   “ 0,                                              (4.13)                                                                  --><a id="eq:160"></a><!--
+                                                                          Bxa Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:160} \frac {\partial G_m}{\partial x^a}\frac {\partial x^a}{\partial q^\alpha }=0,
+\end{equation}
+
+</p>
+
+<p>
+and the definition of the \(Q_\alpha \), the first set of equations reduces to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{13}\)</span>
+
+<!--
+
+                                                                                  Bxa
+                                                                      mpaq x
+                                                                           :a          “ Qα ,                                        (4.14)                                                                  --><a id="eq:159"></a><!--
+                                                                                  Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:159} m_{(a)}\ddot x_a \frac {\partial x^a}{\partial q^\alpha }=Q_\alpha ,
+\end{equation}
+
+</p>
+
+<p>
+with the understanding that \(q^{n-r+m}=0\). It remains to be shown that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{14}\)</span>
+
+<!--
+
+                         d BT       BT          Bxa   d       B x9 a     B x9 a d  Bxa         d Bxa
+                                 α
+                                   ´ α “ mpaq x
+                                              :a α ðñ    px9 a α q ´ x9 a α “ px9 a α q ´ x9 a         .                             (4.15)                                                                  --><a id="eq:161"></a><!--
+                         dt B q9    Bq          Bq    dt      B q9       Bq     dt Bq          dt Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:161} \frac {d}{dt}\frac {\partial T}{\partial \dot q^\alpha }-\frac {\partial T}{\partial q^\alpha }=m_{(a)}\ddot x_a \frac {\partial x^a}{\partial q^\alpha
+}\iff \frac {d}{dt}(\dot x_a\frac {\partial \dot x^a}{\partial \dot q^\alpha })-\dot x_a\frac {\partial \dot x^a}{\partial q^\alpha } =\frac {d}{dt}(\dot x_a \frac
+{\partial x^a}{\partial q^\alpha })-\dot x_a\frac {d}{dt}\frac {\partial x^a}{\partial q^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+This is satisfied since it follows directly from <span class="textup">(<a href="node-4.html#eq:166">4.6</a>)</span> that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{15}\)</span>
+
+<!--
+
+
+                                             B x9 a   Bxa           B x9 a    B 2 xa β     B 2 xa    d Bxa
+                                                    “      ,               “           q
+                                                                                       9 `         “         .                       (4.16)                                                                  --><a id="eq:162"></a><!--
+                                             B q9α    Bq α          Bq α     Bq α Bq β     Bq α Bt   dt Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:162} \frac {\partial \dot x^a}{\partial \dot q^\alpha }=\frac {\partial x^a}{\partial q^\alpha },\quad \frac {\partial \dot x^a}{\partial q^\alpha }= \frac
+{\partial ^2 x^a}{\partial q^\alpha \partial q^\beta }\dot q^\beta +\frac {\partial ^2 x^a}{\partial q^\alpha \partial t}=\frac {d}{dt}\frac {\partial x^a}{\partial
+q^\alpha }.
+\end{equation}
+
+</p>
+<!--
+...... section Dissipative systems ......
+-->
+<h4 id="autosec-41"><span class="sectionnumber">4.3&#x2003;</span>Dissipative systems</h4>
+<a id="mechanics-autopage-41"></a>
+
+
+<a id="sec:dissipative-systems"></a>
+
+<p>
+In some dissipative systems there exists, besides the applied and the reaction forces, also friction forces proportional to the velocities. In this case,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{16}\)</span>
+
+<!--
+
+                                                "
+                                                         :a “ Fa ` µm BG
+                                                    mpaq x                      9b
+                                                                      Bxa ´ ζab x
+                                                                        m
+                                                                                   ,                                                     (4.17)                                     --><a id="eq:158b"></a><!--
+                                                    Gm “ 0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:158b}\left \{ \begin{array}{l} m_{(a)}\ddot x_a=F_a+\mu ^m\frac {\partial G_m}{\partial x^a}-\zeta _{ab}\dot x^b\\ G_m=0 \end {array}\right .,
+\end{equation}
+
+</p>
+
+<p>
+When contracting with \(\frac {\partial x^a}{\partial q^\alpha }\), the additional term on the right hand side is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{17}\)</span>
+
+<!--
+
+                                                                           Bxa
+                                                               ´ζab x9 b        .                                                         (4.18)                                     --><a id="eq:168"></a><!--
+                                                                           Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:168} - \zeta _{ab}\dot x^b \frac {\partial x^a}{\partial q^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+If the constant friction coefficients are symmetric, \(\zeta _{ab}=\zeta _{ba}\), one may write the associated Lagrange equations in terms of the Rayleigh’s dissipation function
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{18}\)</span>
+
+<!--
+
+                                                                    1
+                                                             D“       ζab x9 a x9 b ,                                                     (4.19)                                     --><a id="eq:163"></a><!--
+                                                                    2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:163} D=\frac 12 \zeta _{ab}\dot x^a\dot x^b,
+\end{equation}
+
+</p>
+
+<p>
+as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{19}\)</span>
+
+<!--
+
+
+                                                           δT          BD
+                                                              α
+                                                                “ ´Qα ´ α ,                                                               (4.20)                                     --><a id="eq:164"></a><!--
+                                                           δq          B q9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:164} \boxed {\frac {\delta T}{\delta q^\alpha }=-Q_\alpha -\frac {\partial D}{\partial \dot q^\alpha }},
+\end{equation}
+
+</p>
+
+<p>
+because
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{20}\)</span>
+
+<!--
+
+                                                     BD          B x9 a b         b Bx
+                                                                                       a
+                                                           “ ζab       x
+                                                                       9  “ ζab x
+                                                                                9        .                                                (4.21)                                     --><a id="eq:167"></a><!--
+                                                     B q9α       B q9α              Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:167} \frac {\partial D}{\partial \dot q^\alpha }=\zeta _{ab} \frac {\partial \dot x^a}{\partial \dot q^\alpha }\dot x^b= \zeta _{ab}\dot x^b \frac {\partial
+x^a}{\partial q^\alpha }.
+\end{equation}
+
+</p>
+<!--
+...... section Euler-Lagrange equations ......
+-->
+<h4 id="autosec-42"><span class="sectionnumber">4.4&#x2003;</span>Euler-Lagrange equations</h4>
+<a id="mechanics-autopage-42"></a>
+
+
+<a id="sec:euler-lagr-equat"></a>
+
+<p>
+In the absence of such friction forces and if all applied forces derive from a potential \(V(x^a)\), natural trajectories have to satisfy the Euler-Lagrange equations,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{21}\)</span>
+
+<!--
+
+
+                                                               δL
+                                                                    “0.                                                                (4.22)                                                                           --><a id="eq:169"></a><!--
+                                                               δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:169} \boxed {\frac {\delta L}{\delta q^\alpha }=0}.
+\end{equation}
+
+</p>
+
+<p>
+These equations can either be obtained from the Lagrange equations <span class="textup">(<a href="node-4.html#eq:157">4.11</a>)</span> by using that \(L=T-V\) and
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{22}\)</span>
+
+<!--
+
+                                                 Bxa      BV Bxa     BV            δV    BV
+                                       Qα “ Fa      α
+                                                      “ ´   a   α
+                                                                  “ ´ α,              α
+                                                                                        “ α,                                           (4.23)                                                                           --><a id="eq:170"></a><!--
+                                                 Bq       Bx Bq      Bq            δq    Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:170} Q_\alpha =F_a\frac {\partial x^a}{\partial q^\alpha }=-\frac {\partial V}{\partial x^a}\frac {\partial x^a}{\partial q^\alpha }=-\frac {\partial
+V}{\partial q^\alpha }, \quad \frac {\delta V}{\delta q^\alpha }= \frac {\partial V}{\partial q^\alpha },
+\end{equation}
+
+</p>
+
+<p>
+where \(V(q^\alpha ,t)=V(x^a(q^\alpha ,t))\). Alternatively, one derive the Euler-Lagrange equations directly from the least action principle:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{23}\)</span>
+
+<!--
+
+                                        ż tf                                   ıtf       ż tf
+                                             BL       BL           ” BL                              δL α
+                             0 “ δS “    dt p α δq α ` α δ q9α q “        δq α
+                                                                                   `            dt        δq .                         (4.24)                                                                           --><a id="eq:171"></a><!--
+                                      ti     Bq       B q9          B q9α       ti         ti        δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:171} 0= \delta S=\int ^{t_f}_{t_i}dt\ (\frac {\partial L}{\partial q^\alpha }\delta q^\alpha +\frac {\partial L}{\partial \dot q^\alpha }\delta \dot q^\alpha
+)= \Big [\frac {\partial L}{\partial \dot q^\alpha }\delta q^\alpha \Big ]^{t_f}_{t_i}+\int ^{t_f}_{t_i}dt\ \frac {\delta L}{\delta q^\alpha }\delta q^{\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+The passage from the first to the second equality involves an integrations by parts, the boundary term vanishes because of the assumption that the variations vanish at the end points, and the Euler-Lagrange equations then follow by using the fact that the
+variations \(\delta q^\alpha (t)\) are arbitrary and by the du Bois-Reymond lemma.
+</p>
+<!--
+......         paragraph Remarks ......
+-->
+
+
+<p>
+<span class="paragraph" id="autosec-43">Remarks</span>
+<a id="mechanics-autopage-43"></a>
+
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> In some problems, the potential may depend on velocities, \(V=V(q^\alpha ,\dot q^\alpha ,t)\) or, more generally, the Lagrangian may be of form \(L(q^\alpha ,\dot q^\alpha
+,t)\), without a direct interpretation in terms of \(T\) and \(V\). In this case, the least action principle for natural trajectories still gives rise to the Euler-Lagrange equations for these trajectories.
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> When making explicit the second order time derivatives in the left hand side of the Euler-Lagrange derivatives,
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{24}\)</span>
+<!--
+
+                                                     δL     d BL       BL     B2 L
+                                                 ´      α
+                                                          “         α
+                                                                      ´ α “ α β q:β ´ fα pq β , q9β , tq,                                                     (4.25)                                                                                       --><a id="eq:175"></a><!--
+                                                     δq     dt B q9    Bq  B q9 B q9
+-->
+<p>
+
+\begin{equation}
+\label {eq:175} -\frac {\delta L}{\delta q^\alpha }= \frac {d}{dt}\frac {\partial L}{\partial \dot q^\alpha }- \frac {\partial L}{\partial q^\alpha }=\frac {\partial
+^2L}{\partial \dot q^\alpha \partial \dot q^\beta }\ddot q^\beta -f_\alpha (q^\beta ,\dot q^\beta ,t),
+\end{equation}
+
+</p>
+<p>
+it follows that the Euler-Lagrange equations are equivalent to differential equations in normal form if and only if
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{25}\)</span>
+<!--
+                                                                            ˇ B2 L ˇ
+                                                                            ˇ α β ˇ ‰ 0.                                                                      (4.26)
+                                                                            ˇ           ˇ
+                                                                                                                                                                                                                                                           --><a id="eq:176"></a><!--
+                                                                              B q9 B q9
+-->
+<p>
+
+\begin{equation}
+\label {eq:176} \Big |\frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }\Big |\neq 0.
+\end{equation}
+
+</p>
+<p>
+We call this the regular case. In this case, the inverse matrix \(M^{\gamma \alpha }\frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }=\delta ^\gamma _\beta \) where \(M^{\gamma
+\alpha }=M^{\gamma \alpha }(q^\beta ,\dot q^\beta ,t)\), exists and the normal form of the Euler-Lagrange equations is
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{26}\)</span>
+<!--
+
+                                                           q:γ “ F γ ,      F γ pq α , q9α , tq “ M γα fα .                                                   (4.27)                                                                                       --><a id="eq:177"></a><!--
+-->
+<p>
+
+\begin{equation}
+\label {eq:177} \ddot q^\gamma =F^\gamma ,\quad F^\gamma (q^\alpha ,\dot q^\alpha ,t)=M^{\gamma \alpha }f_\alpha .
+\end{equation}
+
+</p>
+<p>
+Unless otherwise specified, we will always be in the regular case in the rest of the course.
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> It follows from <span class="textup">(<a href="node-4.html#eq:171">4.24</a>)</span> that one may define the functional derivative of the action with respect to a trajectory
+\(q^\alpha (t)\) by
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{27}\)</span>
+<!--
+                                                               δS    δL ˇ
+                                                               α
+                                                                    “ α ˇqα “qα ptq,q9α “ d qα ptq .                                                          (4.28)                                                                                       --><a id="eq:172"></a><!--
+                                                             δq ptq  δq                  dt
+
+-->
+<p>
+
+\begin{equation}
+\label {eq:172} \frac {\delta S}{\delta q^\alpha (t)}=\frac {\delta L}{\delta q^\alpha } \big |_{q^\alpha =q^\alpha (t),\dot q^{\alpha }=\frac {d}{dt}q^\alpha (t)}.
+\end{equation}
+
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> If \(L&apos;=cL\), \(c\in \mathbb R\), the solutions of the Euler-Lagrange equations are unchanged.
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Suppose that \(L&apos;=L+\frac {d f}{dt}\) for some \(f=f(q^\alpha ,t)\). It follows that \(\frac {\delta L&apos;}{\delta q^\alpha }=\frac {\delta
+L}{\delta q^\alpha }\). Indeed,
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{28}\)</span>
+<!--
+
+                                     δ df     δ Bf        Bf      B2 f     B2 f d Bf
+                                      α
+                                        p q “ α p β q9β `    q “ α β q9β ` α ´          “ 0.                                                                  (4.29)                                                                                       --><a id="eq:173"></a><!--
+                                    δq dt    δq Bq        Bt    Bq Bq     Bq Bt dt Bq α
+-->
+<p>
+
+\begin{equation}
+\label {eq:173} \frac {\delta }{\delta q^\alpha }(\frac {d f}{dt})=\frac {\delta }{\delta q^\alpha } (\frac {\partial f}{\partial q^\beta }\dot q^\beta +\frac {\partial
+f}{\partial t})=\frac {\partial ^2 f}{\partial q^\alpha \partial q^\beta }\dot q^\beta +\frac {\partial ^2 f}{\partial q^\alpha \partial t}- \frac {d}{dt}{\frac
+{\partial f}{\partial q^\alpha }}=0.
+\end{equation}
+
+</p>
+<p>
+Conversely, suppose that \(\frac {\delta L&apos;}{\delta q^\alpha }=\frac {\delta L}{\delta q^\alpha }\), or if \(M(q^\alpha ,\dot q^\alpha ,t)=L&apos;-L\), that<sup>1</sup> \(\frac {\delta
+M}{\delta q^\alpha }=0\). It follows that \(M=\frac {d f}{dt}\) with \(f=f(q^\alpha ,t)\). Indeed, in \(\frac {\delta M}{\delta q^\alpha }\) the only terms that involve second order derivatives are given by
+\(-\frac {\partial ^2M}{\partial \dot q^\alpha \partial \dot q^\beta }\ddot q^\beta \) and have to vanish separately. It thus follows that \(\frac {\partial ^2M}{\partial \dot q^\alpha
+\partial \dot q^\beta }=0\). When writing
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{29}\)</span>
+
+<!--
+
+                                       ż1
+          α   α                                   d
+  M pq , q9 , tq “ M p0, 0, tq `            dτ      M pτ q α , τ q9α , tq
+                                        0        dτ
+                                                                                                                                                                              żt                       ż1
+                                                                                                                                                                         d                               dτ α BM         BM
+                                                                                                                                                                       “             1         1
+                                                                                                                                                                                   dt M p0, 0, t q `        pq    α
+                                                                                                                                                                                                                    ` q9α α qpτ q α , τ q9α , tq.      (4.30)--><a id="eq:178"></a><!--
+                                                                                                                                                                         dt                            0  τ    Bq        B q9
+
+-->
+
+<p>
+
+\begin{multline}
+\label {eq:178} M(q^\alpha ,\dot q^\alpha ,t)=M(0,0,t)+\int ^1_0d\tau \frac {d}{d\tau }M(\tau q^\alpha ,\tau \dot q^\alpha ,t)\\ =\frac {d}{dt}\int ^t dt&apos;
+M(0,0,t&apos;) +\int ^1_0\frac {d\tau }{\tau }(q^\alpha \frac {\partial M}{\partial q^\alpha }+ \dot q^\alpha \frac {\partial M}{\partial \dot q^\alpha })(\tau q^\alpha
+,\tau \dot q^\alpha ,t).
+\end{multline}
+By the usual manipulation, we may write
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{30}\)</span>
+<!--
+                                                                   BM        BM      δM  d    BM
+                                                              qα        ` q9α α “ q α α ` pq α α q,                                                                     (4.31)                                                                             --><a id="eq:179"></a><!--
+                                                                   Bq α      B q9    δq  dt   B q9
+-->
+<p>
+
+\begin{equation}
+\label {eq:179} q^\alpha \frac {\partial M}{\partial q^\alpha }+\dot q^\alpha \frac {\partial M}{\partial \dot q^\alpha }=q^\alpha \frac {\delta M}{\delta q^\alpha }
++\frac {d}{dt}(q^\alpha \frac {\partial M}{\partial \dot q^\alpha }),
+\end{equation}
+
+</p>
+<p>
+where the first term vanishes by assumption and \(N=q^\alpha \frac {\partial M}{\partial \dot q^\alpha }\) does not depend on \(\dot q^\beta \) since we have already shown that \(\frac {\partial
+^2M}{\partial \dot q^\alpha \partial \dot q^\beta }=0\). Hence \(N=N(q^\alpha ,t)\). Furthermore
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{31}\)</span>
+
+<!--
+
+
+      d                               BN   BN                              BN               BN
+  p      N qpτ q α , τ q9α , tq “ pq9α α `     qpτ q α , τ q9α , tq “ τ q9α α pτ q α , tq `     qpτ q α , tq
+      dt                              Bq    Bt                             Bq                Bt
+                                                                                                                                                                                                                                   d
+                                                                                                                                                                                                                               “      N pτ q α , tq.   (4.32)--><a id="eq:180"></a><!--
+                                                                                                                                                                                                                                   dt
+
+-->
+
+<p>
+
+\begin{multline}
+(\frac {d}{dt} N)(\tau q^\alpha ,\tau \dot q^\alpha ,t) =(\dot q^\alpha \frac {\partial N}{\partial q^\alpha } +\frac {\partial N}{\partial t})(\tau q^\alpha ,\tau \dot
+q^\alpha ,t) =\tau \dot q^\alpha \frac {\partial N}{\partial q^\alpha }(\tau q^\alpha ,t) +\frac {\partial N}{\partial t})(\tau q^\alpha ,t)\\ =\frac {d}{dt} N(\tau
+q^\alpha ,t). \label {eq:180}
+\end{multline}
+Now \(\frac {d}{dt}\) can be taken out of the integral and
+</p>
+<span class="hidden"> \(\seteqnumber{0}{4.}{32}\)</span>
+<!--
+                                                                                                               żt                       ż1
+                                                                                   df                α                                    dτ
+                                                                                 M“ ,            f pq , tq “          1         1
+                                                                                                                    dt M p0, 0, t q `        N pτ q α , tq.                                                                      (4.33)                    --><a id="eq:181"></a><!--
+                                                                                   dt                                                   0 τ
+-->
+<p>
+
+\begin{equation}
+\label {eq:181} M=\frac {df}{dt},\quad f(q^\alpha ,t)=\int ^t dt&apos; M(0,0,t&apos;)+\int ^1_0\frac {d\tau }{\tau }N (\tau q^\alpha ,t).
+\end{equation}
+
+</p>
+<p>
+
+</p>
+</li>
+</ul>
+<div role="note" class="footnotes">
+
+<a id="mechanics-autopage-44"></a>
+<p>
+<sup>1</sup>&nbsp; Note that in this case, we consider this equation to be an identity in the variables \(q^\alpha ,\dot q^\alpha ,t\) and not a system of differential equations for trajectories.
+</p>
+
+
+</div>
+<!--
+...... subsection Worked Exercice 3: A Lagrangian of sufficient generality ......
+-->
+<h5 id="autosec-45"><span class="sectionnumber">4.4.1&#x2003;</span>Worked Exercice 3: A Lagrangian of sufficient generality</h5>
+<a id="mechanics-autopage-45"></a>
+
+
+<a id="sec:worked-exercice-3"></a>
+
+<p>
+Consider a Lagrangian of the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{33}\)</span>
+
+<!--
+
+                                                                                      1
+                                                                                 L“     gβγ q9β q9γ ` Aβ q9β ´ V,                                                                              (4.34)                 --><a id="eq:182"></a><!--
+                                                                                      2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:182} L=\frac {1}{2}g_{\beta \gamma }\dot q^\beta \dot q^\gamma +A_\beta \dot q^\beta -V,
+\end{equation}
+
+</p>
+
+<p>
+where \(g_{\beta \gamma }=g_{\gamma \beta },A_\beta ,V\) are functions of \(q^\delta \) and \(t\) only.
+</p>
+
+<p>
+Show that in the regular case, the “metric” \(g_{\beta \gamma }\) is invertible. Show that the left hand sides of the Euler-Lagrange equations may be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{34}\)</span>
+
+<!--
+
+                                                                  δL                                       BV   Bgαβ β BAα
+                                                              ´        “ gαβ q:β ` Γαβγ q9β q9γ ´ Fαβ q9β ` α `     q9 `    ,                                                                  (4.35)                 --><a id="eq:183"></a><!--
+                                                                  δq α                                     Bq    Bt      Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:183} -\frac {\delta L}{\delta q^\alpha }=g_{\alpha \beta } \ddot q^\beta +\Gamma _{\alpha \beta \gamma } \dot q^\beta \dot q^\gamma -F_{\alpha \beta }\dot
+q^\beta +\frac {\partial V}{\partial q^\alpha } +\frac {\partial g_{\alpha \beta }}{\partial t}\dot q^\beta + \frac {\partial A_\alpha }{\partial t},
+\end{equation}
+
+</p>
+
+<p>
+where the “Christoffel symbols of the first kind” \(\Gamma _{a\beta \gamma }\) and the “field strengths” \(F_{\alpha \beta }\) are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{35}\)</span>
+
+<!--
+
+                                                                           1 Bgαβ Bgαγ   Bgβγ                        BAβ   BAα
+                                                                  Γαβγ “    p γ `    β
+                                                                                       ´      q,             Fαβ “        ´ β.                                                                 (4.36)                 --><a id="eq:184"></a><!--
+                                                                           2 Bq   Bq     Bq α                        Bq α  Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:184} \Gamma _{\alpha \beta \gamma }=\frac 12(\frac {\partial g_{\alpha \beta }}{\partial q^\gamma } +\frac {\partial g_{\alpha \gamma }}{\partial q^\beta }
+-\frac {\partial g_{\beta \gamma }}{\partial q^\alpha }),\quad F_{\alpha \beta }=\frac {\partial A_\beta }{\partial q^\alpha } -\frac {\partial A_\alpha }{\partial
+q^\beta }.
+\end{equation}
+
+</p>
+
+<p>
+Solution: The first part follows from
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{36}\)</span>
+
+<!--
+
+
+                                                                                          B2 L
+                                                                                                   “ gαβ .                                                                                     (4.37)                 --><a id="eq:185"></a><!--
+                                                                                       B q9α B q9β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:185} \frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }=g_{\alpha \beta }.
+\end{equation}
+
+</p>
+
+<p>
+For the second, we compute
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{37}\)</span>
+
+<!--
+
+                                                                             BL        1 Bgβγ β γ BAβ β     BV
+                                                                         ´        “ ´p        q9 q9 ` α q9 ´ α q,                                                                              (4.38)                 --><a id="eq:186"></a><!--
+                                                                             Bq α      2 Bq α        Bq     Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:186} -\frac {\partial L}{\partial q^\alpha }= -(\frac 12 \frac {\partial g_{\beta \gamma }}{\partial q^\alpha }\dot q^\beta \dot q^\gamma +\frac {\partial
+A_\beta }{\partial q^\alpha }\dot q^\beta -\frac {\partial V}{\partial q^\alpha }),
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{38}\)</span>
+
+<!--
+
+                                                                  d BL                 Bgαβ γ β BAα β Bgαβ β BAα
+                                                                           “ gαβ q:β `       q9 q9 ` β q9 `    q9 `    .                                                                       (4.39)                 --><a id="eq:187"></a><!--
+                                                                  dt B q9α              Bq γ        Bq      Bt      Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:187} \frac {d}{dt}\frac {\partial L}{\partial \dot q^\alpha }=g_{\alpha \beta } \ddot q^\beta +\frac {\partial g_{\alpha \beta }}{\partial q^\gamma }\dot
+q^\gamma \dot q^\beta +\frac {\partial A_\alpha }{\partial q^\beta }\dot q^\beta +\frac {\partial g_{\alpha \beta }}{\partial t}\dot q^\beta + \frac {\partial A_\alpha
+}{\partial t}.
+\end{equation}
+
+</p>
+
+<p>
+The result follows by adding the terms on the right hand sides of these two equations and using
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{39}\)</span>
+
+<!--
+
+                                                                              Bgαβ γ β     1 Bgαβ Bgαγ γ β
+                                                                                    q9 q9 “ p γ `      qq9 q9 .                                                                                (4.40)                 --><a id="eq:188"></a><!--
+                                                                               Bq γ        2 Bq   Bq β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:188} \frac {\partial g_{\alpha \beta }}{\partial q^\gamma }\dot q^\gamma \dot q^\beta =\frac 12 (\frac {\partial g_{\alpha \beta }}{\partial q^\gamma }
++\frac {\partial g_{\alpha \gamma }}{\partial q^\beta })\dot q^\gamma \dot q^\beta .
+\end{equation}
+
+</p>
+
+<p>
+For later use, let us note that a geometric representation of the kinetic term \(T=\frac {1}{2}g_{\beta \gamma }\dot q^\beta \dot q^\gamma \) is obtained by considering the “line element”
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{40}\)</span>
+
+<!--
+
+                                                                                           b
+                                                                                    ds “    |gβγ dq β dq γ |,                                                                                  (4.41)                 --><a id="eq:479"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:479} \overline {ds}=\sqrt {|g_{\beta \gamma }dq^\beta dq^\gamma |},
+\end{equation}
+
+</p>
+
+<p>
+which defines a distance in configuration space and where, as in the example of the work of applied forces, the bar in the notation \(\overline {ds}\) indicates that this is in general not an exact differential, and writes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{41}\)</span>
+
+<!--
+
+
+                                                                                              1 ` ds ˘2
+                                                                                       T “     σ        ,                                                                                      (4.42)                 --><a id="eq:480"></a><!--
+                                                                                              2 dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:480} T=\frac 12 \sigma \big (\frac {\overline {ds}}{dt}\big )^2,
+\end{equation}
+
+</p>
+
+<p>
+where \(\sigma \) denotes the sign of \(g_{\beta \gamma }\dot q^\beta \dot q^\gamma \).
+</p>
+<!--
+...... section Points of equilibrium ......
+-->
+<h4 id="autosec-46"><span class="sectionnumber">4.5&#x2003;</span>Points of equilibrium</h4>
+<a id="mechanics-autopage-46"></a>
+
+
+<a id="sec:equilibrium-points"></a>
+
+<p>
+Consider a Lagrangian of the form of the previous section, and assume that there is no explicit time dependence in the coefficients \(A_\alpha \). Equilibrium points are points \(\bar q^\beta \) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{42}\)</span>
+
+<!--
+
+                                                                                              BV β
+                                                                                                   pq̄ q “ 0.                                                                           (4.43)                 --><a id="eq:174"></a><!--
+                                                                                              Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:174} \frac {\partial V}{\partial q^\alpha }(\bar q^\beta )=0.
+\end{equation}
+
+</p>
+
+<p>
+In this case, the trajectories \(q^\beta (t)=\bar q^\beta \), with \(\bar q^\beta \) constant in time, are natural trajectories. Indeed, when evaluated at this trajectories, which satisfy \(\dot q^\beta =0=\ddot q^\beta \), the left
+hand side of the equations of motion <span class="textup">(<a href="node-4.html#eq:183">4.35</a>)</span> vanish since in addition the term \(\frac {\partial A_{\alpha }}{\partial t}\) is absent
+and&nbsp;<span class="textup">(<a href="node-4.html#eq:174">4.43</a>)</span> holds.
+</p>
+
+<p>
+If at the point of equilibrium, we have a local minimum of the potential,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{4.}{43}\)</span>
+
+<!--
+
+
+                                                                                                 B2 V
+                                                                                          det             pq̄q ą 0                                                                      (4.44)                 --><a id="eq:461"></a><!--
+                                                                                                Bq α Bq β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:461} {\rm det}\, \frac {\partial ^{2} V}{\partial q^{\alpha }\partial q^{\beta }}(\bar q)&gt;0
+\end{equation}
+
+</p>
+
+<p>
+the equilibrium is stable, if not it is unstable. Note that the potential that is relevant here is the potential in terms of the Lagrange coordinates.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

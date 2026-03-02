@@ -1,0 +1,2198 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Canonical transformations</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-85"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Canonical transformations ......
+-->
+<h3 id="autosec-85">Chapter&nbsp;<span class="sectionnumber">8&#x2003;</span>Canonical transformations</h3>
+
+<a id="mechanics-autofile-8"></a>
+<!--
+...... section Generating functionals ......
+-->
+<h4 id="autosec-86"><span class="sectionnumber">8.1&#x2003;</span>Generating functionals</h4>
+<a id="mechanics-autopage-86"></a>
+
+
+<a id="sec:gener-funct"></a>
+
+<p>
+Under a general (invertible) transformation of the dependent variables,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{0}\)</span>
+
+<!--
+
+
+                                     q 1α “ q 1α pq, p, tq,         p1α “ p1α pq, p, tq ðñ z 1A “ z A pz, tq,                                                           (8.1)                                      --><a id="eq:339"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:339} q&apos;^\alpha =q&apos;^\alpha (q,p,t),\quad p&apos;_\alpha =p&apos;_\alpha (q,p,t) \iff z&apos;^A=z^A(z,t),
+\end{equation}
+
+</p>
+
+<p>
+there is no guarantee that the Hamiltonian equations of motion keep, the same form, that is to say, that there exists a suitable Hamiltonian \(H&apos;(q&apos;,p&apos;,t)\) such that the Hamiltonian equations of motion in the old variables
+<span class="textup">(<a href="node-6.html#eq:305">6.22</a>)</span> are equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{1}\)</span>
+
+<!--
+
+                                                                      BH 1                       BH 1
+                                                           q91α “          ,          p91α “ ´        .                                                                 (8.2)                                      --><a id="eq:340"></a><!--
+                                                                      Bp1α                       Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:340} \dot q&apos;^\alpha =\frac {\partial H&apos;}{\partial p&apos;_\alpha },\quad \dot p&apos;_\alpha =-\frac {\partial H&apos;}{\partial q^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+However, if one can find a function \(G(z&apos;,t)\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{2}\)</span>
+
+<!--
+
+                                            “             ‰ˇ                                      dG
+                                                pα q9α ´ H ˇzpz1 ,tq “ p1α q91α ´ H 1 pz 1 , tq `    ,                                                                  (8.3)                                      --><a id="eq:341"></a><!--
+                                                                                                  dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:341} \big [p_\alpha \dot q^\alpha -H\big ]\big |_{z(z&apos;,t)}=p&apos;_\alpha \dot q&apos;^\alpha -H&apos;(z&apos;,t)+\frac {d G}{dt},
+\end{equation}
+
+</p>
+
+<p>
+then Hamilton’s equations in the new variables <span class="textup">(<a href="node-8.html#eq:340">8.2</a>)</span> are equivalent to Hamilton’s equations in the old variables <span class="textup">(<a
+href="node-6.html#eq:305">6.22</a>)</span>.
+</p>
+
+<p>
+The proof uses the fact that the addition of a total derivative does not change the equations of motion, so that the Euler-Lagrange equations of motion with respect to \(z&apos;^A\) of the right hand side are given by <span class="textup">(<a
+href="node-8.html#eq:340">8.2</a>)</span>. The result follows from the covariance of the Euler-Lagrange equations of motions, which guarantees that the Euler-Lagrange equations of motion of the left hand side with respect to
+\(z&apos;^A\) are equivalent to the Euler Lagrange equations of \(L_H\) with respect to \(z^A\), which coincide with Hamilton’s equations <span class="textup">(<a href="node-6.html#eq:305">6.22</a>)</span>.
+</p>
+
+<p>
+More explicitly, in terms of equations, recall that \(L_H(z,\dot z,t)=p_\alpha \dot q^\alpha -H(z,t)\). It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{3}\)</span>
+
+<!--
+
+                                                        `           d             ˘                            d
+                               L1H pz 1 , z9 1 , tq “ LH zpz 1 , tq, zpz 1 , tq, t “ p1α q91α ´ H 1 pz 1 , tq ` G                                                       (8.4)                                      --><a id="eq:372"></a><!--
+                                                                    dt                                         dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:372} L&apos;_H(z&apos;,\dot z&apos;,t)=L_H\big (z(z&apos;,t),\frac {d}{dt} z(z&apos;,t),t\big )= p&apos;_\alpha \dot q&apos;^\alpha -H&apos;(z&apos;,t)+\frac
+{d}{dt}G
+\end{equation}
+
+</p>
+
+<p>
+where the first equality is the definition of the transformed first order Lagrangian, while the second equality is equivalent to the assumption <span class="textup">(<a href="node-8.html#eq:341">8.3</a>)</span>.
+</p>
+
+<p>
+When taking the Euler-Lagrange derivative of this equation with respect to \(z&apos;^A\), we get on the left hand side
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{4}\)</span>
+
+<!--
+
+
+                                                           δL1H    Bz B δLH ˇˇ
+                                                                 “                       ,                                                                              (8.5)                                      --><a id="eq:373"></a><!--
+                                                                   Bz 1A δz B z“zpz1 ,tq
+                                                                              ˇ
+                                                           δz 1A
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:373} \frac {\delta L&apos;_H}{\delta z&apos;^A}=\frac {\partial z^B}{\partial z&apos;^A}\frac {\delta L_H}{\delta z^B}\Big |_{z=z(z&apos;,t)},
+\end{equation}
+
+</p>
+
+<p>
+when using covariance of the Euler-Lagrange derivatives (cf. equation <span class="textup">(<a href="node-7.html#eq:4a">7.5</a>)</span>). Since Euler-Lagrange derivatives annihilate total derivatives, <span
+class="textup">(<a href="node-4.html#eq:173">4.29</a>)</span>, the right hand side reduces to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{5}\)</span>
+
+<!--
+
+                                                               δ “ 1 1α                  ‰
+                                                                 1A
+                                                                    pα q9 ´ H 1 pz 1 , tq                                                                               (8.6)                                      --><a id="eq:374"></a><!--
+                                                              δz
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:374} \frac {\delta }{\delta z&apos;^A}\big [p&apos;_\alpha \dot q&apos;^\alpha -H&apos;(z&apos;,t)\big ]
+\end{equation}
+
+</p>
+
+<p>
+When requiring these Euler-Lagrange derivatives to vanish, one finds Hamilton’s equations of motion in the new variables, <span class="textup">(<a href="node-8.html#eq:340">8.2</a>)</span>, while requiring <span
+class="textup">(<a href="node-8.html#eq:373">8.5</a>)</span> to vanish is equivalent to Hamilton’s equations in the old variables.
+</p>
+
+<p>
+Suppose now that one may use as variables \(q^\alpha ,q&apos;^\alpha ,t\), or in other words that \(p_\alpha =p_\alpha (q&apos;,p&apos;(q,p,t),t)\) may be solved for \(p_\alpha \) so as to provide \(p_\alpha
+=p_\alpha (q,q&apos;,t)\). Let us define
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{6}\)</span>
+
+<!--
+
+                                                                    ´        `                   ˘ ¯
+                                                 Γ1 pq, q 1 , tq “ G q 1 , p1 q, ppq, q 1 , tq, t , t .                                                                 (8.7)                                      --><a id="eq:342"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:342} \Gamma _1(q,q&apos;,t)=G\Big (q&apos;,p&apos;\big (q,p(q,q&apos;,t),t\big ),t\Big ).
+\end{equation}
+
+</p>
+
+<p>
+In these variables, <span class="textup">(<a href="node-8.html#eq:341">8.3</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{7}\)</span>
+
+<!--
+
+
+                                                                                                                                          `                   ˘
+                                                                                                                   pα pq, q 1 , tqq9α ´ H q, ppq, q 1 , tq, t
+                                                                                                                          `                  ˘            ´       `(8.8)              ˘¯    BΓ1      BΓ1   BΓ1     --><a id="eq:343"></a><!--
+                                                                                                                    “ p1α q, ppq, q 1 , tq, t q91α ´ H 1 pq 1 , p1 q, ppq, q 1 , tq, t ` q9α α ` q91α 1α `     .
+                                                                                                                                                                                            Bq       Bq     Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:343} &amp;p_\alpha (q,q&apos;,t) \dot q^\alpha -H\big (q,p(q,q&apos;,t),t\big ) \\&amp;=p&apos;_\alpha \big (q,p(q,q&apos;,t),t\big )\dot
+q&apos;^\alpha -H&apos;\Big ((q&apos;,p&apos;\big (q,p(q,q&apos;,t),t\big )\Big )+\dot q^\alpha \frac {\partial \Gamma _1}{\partial q^\alpha }+\dot q&apos;^\alpha \frac
+{\partial \Gamma _1}{\partial q&apos;^\alpha }+\frac {\partial \Gamma _1}{\partial t}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+By identifying the coefficents of the time derivatives, this is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{8}\)</span>
+
+<!--
+
+
+                                                 BΓ1                        BΓ1                           BΓ1
+                                        pα “          ,     p1α “ ´               ,     H1 “ H `              .                                                 (8.9)                                              --><a id="eq:344"></a><!--
+                                                 Bq α                       Bq 1α                          Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:344} \boxed {p_\alpha =\frac {\partial \Gamma _1}{\partial q^\alpha },\quad p&apos;_\alpha =-\frac {\partial \Gamma _1}{\partial q&apos;^\alpha }, \quad
+H&apos;=H+\frac {\partial \Gamma _1}{\partial t}}.
+\end{equation}
+
+</p>
+
+<p>
+The information on the canonical transformation defined by <span class="textup">(<a href="node-8.html#eq:341">8.3</a>)</span> is thus contained in the “generating function” (of the first kind) \(\Gamma
+_1(q,q&apos;,t)\), where one assumes that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{9}\)</span>
+
+<!--
+
+
+                                                                    B 2 Γ1
+                                                               |              |‰0                                                                             (8.10)                                               --><a id="eq:345"></a><!--
+                                                                   Bq α Bq 1β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:345} |\frac {\partial ^2 \Gamma _1}{\partial q^\alpha \partial q&apos;^\beta }|\neq 0
+\end{equation}
+
+</p>
+
+<p>
+so that one may solve \(p_\alpha =p_\alpha (q,q&apos;,t)\) in terms of \(q&apos;^\alpha =q&apos;^\alpha (q,p,t)\).
+</p>
+
+<p>
+In particular for instance, if \(\Gamma _1=q^\alpha \delta _{\alpha \beta }q&apos;^\beta \), the transformation becomes \(p_\alpha =q&apos;_\alpha \), \(p&apos;_\alpha =-q_\alpha \), so that this
+transformation exchanges the role played by the generalized coordinates and the momenta,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{10}\)</span>
+
+<!--
+
+
+                                                          pq α , pα q Ñ ppα , ´q α q.                                                                         (8.11)                                               --><a id="eq:346"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+(q^\alpha ,p_\alpha )\to (p_\alpha ,-q^\alpha ).\label {eq:346}
+\end{equation}
+
+</p>
+
+<p>
+In the considerations below, let us focus for notational simplicity on a single degree of freedom and omit the explicit time dependence. Consider then the (opposite of the) Legendre transform of \(\Gamma _1(q,q&apos;)\) for which
+\(p&apos;=-\frac {\partial \Gamma _1}{\partial q&apos;}\) with respect to \(q&apos;\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{11}\)</span>
+
+<!--
+
+                                                        ”                     ıˇ
+                                           Γ2 pq, p1 q “ p1 q 1 ` Γ1 pq, q 1 q ˇ                              .                                               (8.12)
+                                                                               ˇ
+                                                                                                                                                                                                                   --><a id="eq:347"></a><!--
+                                                                                           q 1 “q 1 pq,p1 q
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:347} \Gamma _2(q,p&apos;)=\Big [p&apos;q&apos;+\Gamma _1(q,q&apos;)\Big ]\Big |_{q&apos;=q&apos;(q,p&apos;)}.
+\end{equation}
+
+</p>
+
+<p>
+This is the generating function of the second kind, for which
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{12}\)</span>
+
+<!--
+
+                                                                   BΓ2                 BΓ2
+                                                          p“           ,      q1 “         .                                                                  (8.13)                                               --><a id="eq:348"></a><!--
+                                                                    Bq                 Bp1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:348} p=\frac {\partial \Gamma _2}{\partial q},\quad q&apos;=\frac {\partial \Gamma _2}{\partial p&apos;}.
+\end{equation}
+
+</p>
+
+<p>
+In particular, if \(\Gamma _2=qp&apos;\), the transformation is the identity, \(p=p&apos;\), \(q&apos;=q\).
+</p>
+
+<p>
+The Legendre transform of \(\Gamma _1\) with respect to \(q\), where \(p=\frac {\partial \Gamma _1}{\partial q}\) is the generating function of the third kind,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{13}\)</span>
+
+<!--
+
+                                                        ”                   ıˇ
+                                          Γ3 pp, q 1 q “ ´ pq ` Γ1 pq, q 1 q ˇ                                ,                                               (8.14)
+                                                                             ˇ
+                                                                                                                                                                                                                   --><a id="eq:349"></a><!--
+                                                                                               q“qpp,q 1 q
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:349} \Gamma _3(p,q&apos;)=\Big [-pq+\Gamma _1(q,q&apos;)\Big ]\Big |_{q=q(p,q&apos;)},
+\end{equation}
+
+</p>
+
+<p>
+for which
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{14}\)</span>
+
+<!--
+
+                                                                   BΓ3                   BΓ3
+                                                     p1 “ ´             ,      q“´           .                                                                (8.15)                                               --><a id="eq:350"></a><!--
+                                                                   Bq 1                   Bp
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:350} p&apos;=-\frac {\partial \Gamma _3}{\partial q&apos;},\quad q=-\frac {\partial \Gamma _3}{\partial p}.
+\end{equation}
+
+</p>
+
+<p>
+In particular, if \(\Gamma _3=pq&apos;\), the transformation is \(p=-p&apos;\), \(q&apos;=-q\).
+</p>
+
+<p>
+Finally, the generating function of the fourth kind is the Legendre transform of \(\Gamma _2(q,p&apos;)\), for which \(p=\frac {\partial \Gamma _2}{\partial q}\) with respect to \(q\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{15}\)</span>
+
+<!--
+
+                                                       ”                  ıˇ
+                                          Γ4 pp, p1 q “ ´ pq ` Γ2 pq, p1 q ˇ                                  ,                                               (8.16)
+                                                                           ˇ
+                                                                                                                                                                                                                   --><a id="eq:351"></a><!--
+                                                                                               q“qpp,p1 q
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:351} \Gamma _4(p,p&apos;)=\Big [-pq+\Gamma _2(q,p&apos;)\Big ]\Big |_{q=q(p,p&apos;)},
+\end{equation}
+
+</p>
+
+<p>
+for which
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{16}\)</span>
+
+<!--
+
+                                                               BΓ4                      BΓ4
+                                                      q1 “         ,          q“´           .                                                                 (8.17)                                               --><a id="eq:352"></a><!--
+                                                               Bp1                       Bp
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:352} q&apos;=\frac {\partial \Gamma _4}{\partial p&apos;},\quad q=-\frac {\partial \Gamma _4}{\partial p}.
+\end{equation}
+
+</p>
+
+<p>
+In particular, if \(\Gamma _4=pp&apos;\), \(q&apos;=p\), \(q=-p&apos;\).
+</p>
+
+<p>
+Remark: For several canonical pairs, one may have generating functions of different type in the different canonical pairs.
+</p>
+
+<p>
+How can one remember these formulas ?
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{17}\)</span>
+
+<!--
+
+
+                                                                                           BΓ1 1     BΓ1
+                                q, q 1 : pdq “ p1 dq 1 ` dΓ1 pq, q 1 q, p “                    , p “´ 1 ,                                                     (8.18)                                               --><a id="eq:353"></a><!--
+                                                                                            Bq       Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:353} q,q&apos;:\ pdq=p&apos;dq&apos;+d\Gamma _1(q,q&apos;),\ \boxed {p=\frac {\partial \Gamma _1}{\partial q},\ p&apos;=-\frac {\partial \Gamma _1}{\partial
+q&apos;}},
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{18}\)</span>
+
+<!--
+
+
+
+                                                                                                                                         q, p1 : p1 dq 1 “ dpp1 q 1 q ´ dp1 q 1 , Γ2 “ Γ1 ` p1 q 1 ,
+                                                                                                                                                                                BΓ2 1     BΓ2          (8.19)      --><a id="eq:354"></a><!--
+                                                                                                                                     pdq “ ´dp1 q 1 ` dΓ2 pq, p1 q, p “             , q “     ,
+                                                                                                                                                                                 Bq       Bp1
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:354} \begin{split} q,p&apos;:\ p&apos;dq&apos;=d(p&apos;q&apos;)-dp&apos;q&apos;,\ \Gamma _2=\Gamma _1+p&apos;q&apos;,\\ pdq=-dp&apos;q&apos;+d\Gamma
+_2(q,p&apos;),\ \boxed {p=\frac {\partial \Gamma _2}{\partial q},\ q&apos;=\frac {\partial \Gamma _2}{\partial p&apos;}}, \end {split}
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{19}\)</span>
+
+<!--
+
+
+
+                                                                                                                                                 p, q 1 : pdq “ dppqq ´ dpq, Γ3 “ Γ1 ´ pq,
+                                                                                                                                                                                BΓ3 1     BΓ3(8.20)                --><a id="eq:355"></a><!--
+                                                                                                                                   ´dpq “ p1 dq 1 ` dΓ3 pp, q 1 q, q “ ´            , p “´ 1 ,
+                                                                                                                                                                                 Bp       Bq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:355} \begin{split} p,q&apos;:\ pdq=d(pq)-dpq,\ \Gamma _3=\Gamma _1-pq,\\ -dpq=p&apos;dq&apos;+d\Gamma _3(p,q&apos;),\ \boxed {q=-\frac {\partial \Gamma
+_3}{\partial p},\ p&apos;=-\frac {\partial \Gamma _3}{\partial q&apos;}}, \end {split}
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{20}\)</span>
+
+<!--
+
+
+
+                                                                                                                                                            p, p1 : Γ4 “ Γ2 ´ pq “ Γ3 ` p1 q 1 ,
+                                                                                                                                                                                 BΓ4 1    BΓ4(8.21)                --><a id="eq:356"></a><!--
+                                                                                                                                   ´dpq “ ´dp1 q 1 ` dΓ4 pp, p1 q, q “ ´             ,q “      .
+                                                                                                                                                                                  Bp      Bp1
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:356} \begin{split} p,p&apos;:\ \Gamma _4=\Gamma _2-pq=\Gamma _3+p&apos;q&apos;,\\ -dpq=-dp&apos;q&apos;+d\Gamma _4(p,p&apos;),\ \boxed {q=-\frac {\partial
+\Gamma _4}{\partial p},\, q&apos;=\frac {\partial \Gamma _4}{\partial p&apos;}}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+Remark: The transformation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{21}\)</span>
+
+<!--
+
+
+                                                                           q 1 “ µq,      p1 “ νp,                µ, ν P R˚ ,                                                                      (8.22)          --><a id="eq:357"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+q&apos;=\mu q,\quad p&apos;=\nu p,\quad \mu ,\nu \in \mathbb R^*, \label {eq:357}
+\end{equation}
+
+</p>
+
+<p>
+is a canonical transformation with
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{22}\)</span>
+
+<!--
+
+                                                                                                      q 1 p1
+                                                                              H 1 pq 1 , p1 , q “ µνHp , q                                                                                         (8.23)          --><a id="eq:358"></a><!--
+                                                                                                      µ ν
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:358} H&apos;(q&apos;,p&apos;,)=\mu \nu H(\frac {q&apos;}{\mu },\frac {p&apos;}{\nu })
+\end{equation}
+
+</p>
+
+<p>
+because
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{23}\)</span>
+
+<!--
+
+                                                                                       `       ˘ˇ
+                                                                      p1 q91 ´ H 1 “ µν pq9 ´ H ˇq“ q1 ,p“ p1 ,                                                                                    (8.24)          --><a id="eq:359"></a><!--
+                                                                                                                       µ    ν
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:359} p&apos;\dot q&apos;-H&apos;=\mu \nu \big (p\dot q-H\big )\big |_{q=\frac {q&apos;}{\mu },p=\frac {p&apos;}{\nu }},
+\end{equation}
+
+</p>
+
+<p>
+and the Euler-Lagrange equations are unchanged when multiplying the Lagrangian by a non-vanishing constant. There exists no generating function however. The same holds for the canonical transformation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{24}\)</span>
+
+<!--
+
+
+                                                                            q 1 “ p,      p1 “ q,         H 1 “ ´H.                                                                                (8.25)          --><a id="eq:360"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:360} q&apos;=p,\quad p&apos;=q,\quad H&apos;=-H.
+\end{equation}
+
+</p>
+
+<p>
+A canonical transformation that admits a generating function is called a restricted canonical transformation.
+</p>
+<!--
+...... section Invariance of canonical Poisson brackets ......
+-->
+<h4 id="autosec-87"><span class="sectionnumber">8.2&#x2003;</span>Invariance of canonical Poisson brackets</h4>
+<a id="mechanics-autopage-87"></a>
+
+
+<a id="sec:invar-canon-poiss"></a>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-88"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">8</span></span>. </span> A canonical transformation is a restricted canonical transformation if
+and only if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{25}\)</span>
+
+<!--
+
+
+
+                                       tq 1α , q 1β u “ 0 “ tp1α , p1β u,     tq 1α , p1β u “ δβα ,       ðñ tz 1A , z 1B u “ ω AB .                                             (8.26)                                --><a id="eq:361"></a><!--
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:361} \boxed {\{q&apos;^\alpha ,q&apos;^\beta \}=0=\{p&apos;_\alpha ,p&apos;_\beta \},\quad \{q&apos;^\alpha ,p&apos;_\beta \}=\delta ^\alpha _\beta ,\quad
+\iff \{z&apos;^A,z&apos;^B\}=\omega ^{AB}}.
+\end{equation}
+
+
+</p>
+
+<p>
+
+
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Remarks:
+</p>
+
+<p>
+(i) The last condition becomes explicitly
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{26}\)</span>
+
+<!--
+
+
+                                                  Bz 1A CD Bz 1B           Bz 1A CD       Bz D
+                                                     C
+                                                       ω      D
+                                                                 “ ω AB ðñ    C
+                                                                                ω   “ ω AB 1B ,                                                                                  (8.27)                                --><a id="eq:362"></a><!--
+                                                  Bz       Bz              Bz             Bz
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:362} \frac {\partial z&apos;^A}{\partial z^C}\omega ^{CD}\frac {\partial z&apos;^B}{\partial z^D}=\omega ^{AB}\iff \frac {\partial z&apos;^A}{\partial
+z^C}\omega ^{CD}= \omega ^{AB}\frac {\partial z^D}{\partial z&apos;^B},
+\end{equation}
+
+</p>
+
+<p>
+or
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{27}\)</span>
+
+<!--
+
+                                              ˜ Bq1α      Bq 1α
+                                                                  ¸ˆ                 ˙       ˆ                ˙ ˜ Bqγ     Bpγ
+                                                                                                                                  ¸
+                                                  Bq β    Bpβ           0      δγβ                0     δβα       Bq 1β   Bq 1β
+                                                                                         “                        Bq γ                ,                                          (8.28)                                --><a id="eq:363"></a><!--
+                                                  Bp1α    Bp1α         ´δβγ     0                ´δαβ    0        Bp1β
+                                                                                                                          Bpγ
+                                                                                                                          Bp1β
+                                                  Bq β    Bpβ
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:363} \begin{pmatrix} \frac {\partial q&apos;^\alpha }{\partial q^\beta } &amp; \frac {\partial q&apos;^\alpha }{\partial p_\beta } \\ \frac {\partial
+p&apos;_\alpha }{\partial q^\beta } &amp; \frac {\partial p&apos;_\alpha }{\partial p_\beta } \end {pmatrix}\begin{pmatrix} 0 &amp; \delta ^\beta _\gamma \\ -\delta
+^\gamma _\beta &amp; 0 \end {pmatrix}=\begin{pmatrix} 0 &amp; \delta ^\alpha _\beta \\ -\delta ^\beta _\alpha &amp; 0 \end {pmatrix}\begin{pmatrix} \frac {\partial
+q^\gamma }{\partial q&apos;^\beta } &amp; \frac {\partial p_\gamma }{\partial q&apos;^\beta } \\ \frac {\partial q^\gamma }{\partial p&apos;_\beta } &amp; \frac
+{\partial p_\gamma }{\partial p&apos;_\beta } \end {pmatrix},
+\end{equation}
+
+</p>
+
+<p>
+which is equivalent to the following relations between mixed partial derivatives:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{28}\)</span>
+
+<!--
+
+
+                                                                                                                                      Bq 1α    Bq γ       Bq 1α     Bpγ
+                                                                                                                                            “ ´ 1 paq,        γ
+                                                                                                                                                                “ ´ 1 pbq,
+                                                                                                                                      Bpγ      Bpα        Bq        Bpα
+                                                                                                                                                                                                (8.29)                 --><a id="eq:364"></a><!--
+                                                                                                                                      Bp1α     Bq γ       Bp1α     Bpγ
+                                                                                                                                            “ ´ 1α pcq,         “ ´ 1α pdq.
+                                                                                                                                      Bpγ      Bq         Bq γ     Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:364} \begin{split} \frac {\partial q&apos;^\alpha }{\partial p_\gamma }=-\frac {\partial q^\gamma }{\partial p&apos;_\alpha }\ (a),\quad \frac {\partial
+q&apos;^\alpha }{\partial q^\gamma }=-\frac {\partial p_\gamma }{\partial p&apos;_\alpha }\ (b),\\ \frac {\partial p&apos;_\alpha }{\partial p_\gamma }=-\frac {\partial
+q^\gamma }{\partial q&apos;^\alpha }\ (c),\quad \frac {\partial p&apos;_\alpha }{\partial q^\gamma }=-\frac {\partial p_\gamma }{\partial q&apos;^\alpha }\ (d). \end
+{split}
+\end{equation}
+
+</p>
+
+<p>
+(ii) As a consequence of the theorem, for a restricted canonical transformation, Poisson brackets can be computed in the old or in the new variables. Indeed, if \(F&apos;(z&apos;)=F(z(z&apos;))\),
+\(G&apos;(z&apos;)=G(z(z&apos;))\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{29}\)</span>
+
+<!--
+
+
+
+                                                                                                                             BF 1 AB BG1         BF ˇˇ         Bz C AB Bz D BG ˇˇ
+                                                                                                               tF 1 , G1 uz1 “     ω          “                      ω
+                                                                                                                                                 Bz C z“zpz1 q Bz 1A      Bz 1B Bz D z“zpz1 q
+                                                                                                                                                     ˇ                              ˇ
+                                                                                                                             Bz 1A      Bz 1B
+                                                                                                                             ´ BF                             (8.30)                                                   --><a id="eq:365"></a><!--
+                                                                                                                                      CD BG ˇ
+                                                                                                                                              ¯ˇ          ´          ¯ˇ
+                                                                                                                                    ω                            Gu               ,
+                                                                                                                                                                       ˇ
+                                                                                                                           “                           “    tF,
+                                                                                                                              Bz C       Bz D z“zpz1 q
+                                                                                                                                               ˇ                       ˇ
+                                                                                                                                                                        z“zpz 1 q
+
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:365} \{F&apos;,G&apos;\}_{z&apos;}&amp;=\frac {\partial F&apos;}{\partial z&apos;^A}\omega ^{AB}\frac {\partial G&apos;}{\partial
+z&apos;^B}=\frac {\partial F}{\partial z^C}\Big |_{z=z(z&apos;)}\frac {\partial z^C}{\partial z&apos;^A}\omega ^{AB}\frac {\partial z^D}{\partial z&apos;^B}\frac
+{\partial G}{\partial z^D}\Big |_{z=z(z&apos;)}\\&amp;=\Big (\frac {\partial F}{\partial z^C}\omega ^{CD}\frac {\partial G}{\partial z^D}\Big )\Big
+|_{z=z(z&apos;)}=\Big (\{F,G\}\Big )\Big |_{z=z(z&apos;)}, \end {split}
+\end{equation}
+
+</p>
+
+<p>
+where we have used that, by multiplying by the Jacobian matrices of the inverse transformations, the first of <span class="textup">(<a href="node-8.html#eq:362">8.27</a>)</span> is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{30}\)</span>
+
+<!--
+
+
+                                                           Bz C AB Bz D
+                                                                 ω       “ ω CD .                                                                              (8.31)                                                  --><a id="eq:366"></a><!--
+                                                           Bz 1A   Bz 1B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:366} \frac {\partial z^C}{\partial z&apos;^A}\omega ^{AB}\frac {\partial z^D}{\partial z&apos;^B}=\omega ^{CD}.
+\end{equation}
+
+</p>
+
+<p>
+(iii) Equation <span class="textup">(<a href="node-8.html#eq:366">8.31</a>)</span> means that the inverse of a canonical transformation is a canonical transformation. Consider then also a second canonical transformations,
+\(z&apos;&apos;=z&apos;&apos;(z&apos;)\). The Jacobian matrices of the composed transformation \(z&apos;&apos;=z&apos;&apos;(z)=z&apos;&apos;(z&apos;(z))\) are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{31}\)</span>
+
+<!--
+
+
+                                                         Bz 2A   Bz 2A ˇˇ         Bz 1C
+                                                               “                        ,                                                                      (8.32)                                                  --><a id="eq:367"></a><!--
+                                                         Bz B    Bz 1C z1 “z1 pzq Bz B
+                                                                        ˇ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:367} \frac {\partial z&apos;&apos;^A}{\partial z^B}=\frac {\partial z&apos;&apos;^A}{\partial z&apos;^C}\Big |_{z&apos;=z&apos;(z)}\frac {\partial
+z&apos;^C}{\partial z^B},
+\end{equation}
+
+</p>
+
+<p>
+which allows to prove directly that the composition of two canonical transformations is a canonical transformation. This implies that canonical transformations form a (sub-) group (of the group of invertible transformations).
+</p>
+
+<p>
+The detailed proof of the theorem is omitted here and can be found in the handwritten “french” notes.
+</p>
+
+<p>
+In the following, we only consider restricted canonical transformations but omit the adjective “restricted”.
+</p>
+<!--
+...... section Infinitesimal canonical transformations ......
+-->
+<h4 id="autosec-89"><span class="sectionnumber">8.3&#x2003;</span>Infinitesimal canonical transformations</h4>
+<a id="mechanics-autopage-89"></a>
+
+
+<a id="sec:infin-canon-transf"></a>
+
+<p>
+In order to study an infinitesimal canonical transformation close to the identity, we start from a generating function of the second kind of the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{32}\)</span>
+
+<!--
+
+
+                                                         Γ2 “ p1β q β ` ϵGpq, p1 , tq,                                                   (8.33)                                                         --><a id="eq:368"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:368} \Gamma _2=p&apos;_\beta q^\beta +\epsilon G(q,p&apos;,t),
+\end{equation}
+
+</p>
+
+<p>
+because we have already seen that for \(\epsilon =0\), such a canonical transformation reduces to the identity. For \(\epsilon \neq 0\), the associated canonical transformation is defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{33}\)</span>
+
+<!--
+
+                                               BΓ2           BG                  BΓ2         BG
+                                        pα “      α
+                                                    “ p1α ` ϵ α ,       q 1α “     1
+                                                                                     “ qα ` ϵ 1 .                                        (8.34)                                                         --><a id="eq:369"></a><!--
+                                               Bq            Bq                  Bpα         Bpα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:369}p_\alpha =\frac {\partial \Gamma _2}{\partial q^\alpha }=p&apos;_\alpha +\epsilon \frac {\partial G}{\partial q^\alpha },\quad q&apos;^\alpha =\frac
+{\partial \Gamma _2}{\partial p&apos;_\alpha }=q^\alpha +\epsilon \frac {\partial G}{\partial p&apos;_\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+In the second terms of these relations one may replace \(p&apos;_\beta \) by \(p_\beta \) in \(G\), since one is already at first order on \(\epsilon \), so that \(G=G(q,p,t)\). One may then write,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{34}\)</span>
+
+<!--
+
+                                                   BG                                         BG
+                           δq α “ q 1α ´ q α “ ϵ       “ ϵtq α , Gu,    δpα “ p1α ´ pα “ ´ϵ        “ ϵtpα , Gu,                          (8.35)                                                         --><a id="eq:370"></a><!--
+                                                   Bpα                                        Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:370} \delta q^\alpha = q&apos;^\alpha -q^\alpha =\epsilon \frac {\partial G}{\partial p_\alpha }=\epsilon \{q^\alpha ,G\},\quad \delta p_\alpha =
+p&apos;_\alpha -p^\alpha =-\epsilon \frac {\partial G}{\partial q^\alpha }=\epsilon \{p_\alpha ,G\},
+\end{equation}
+
+</p>
+
+<p>
+and thus also
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{35}\)</span>
+
+<!--
+
+
+                                                             δz A “ ϵtz A , Gu .                                                         (8.36)                                                         --><a id="eq:371"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:371} \boxed {\delta z^A=\epsilon \{z^A,G\}}.
+\end{equation}
+
+</p>
+
+<p>
+The phase space function \(G(q,p,t)\) is called the generator of the infinitesimal canonical transformation.
+</p>
+<!--
+...... section One-parameter group of canonical transformations ......
+-->
+<h4 id="autosec-90"><span class="sectionnumber">8.4&#x2003;</span>One-parameter group of canonical transformations</h4>
+<a id="mechanics-autopage-90"></a>
+
+
+<a id="sec:one-parameter-group"></a>
+
+<p>
+A family of canonical transformation depending on a parameter \(\lambda \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{36}\)</span>
+
+<!--
+
+
+                                                              zλA “ Z A pz, λq,                                                     (8.37)                                                                        --><a id="eq:375"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:375} z_\lambda ^A=Z^A(z,\lambda ),
+\end{equation}
+
+</p>
+
+<p>
+such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{37}\)</span>
+
+<!--
+
+                                                                `             ˘
+                              zλA1 `λ2 “ Z A pz, λ1 ` λ2 q “ Z A Zpz, λ1 q, λ2 ,       z0A “ Z A pz, 0q “ z A ,                     (8.38)                                                                        --><a id="eq:376"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:376} z^A_{\lambda _1+\lambda _2}=Z^A(z,\lambda _1+\lambda _2)= Z^A\big (Z(z,\lambda _1),\lambda _2\big ),\quad z^A_0=Z^A(z,0)=z^A,
+\end{equation}
+
+</p>
+
+<p>
+is called a one-parameter group of canonical transformations.
+</p>
+
+<p>
+The transformation \(z^A_{\lambda +\epsilon }\) with \(\epsilon \) infinitesimal is an infinitesimal canonical transformation that reduces to \(z^A_\lambda \) for \(\epsilon =0\). It follows from <span class="textup">(<a
+href="node-8.html#eq:371">8.36</a>)</span> that there exists a generator \(G(z_\lambda )\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{38}\)</span>
+
+<!--
+
+                                                       A
+                                                      zλ`ϵ ´ zλA “ ϵtzλA , Gpzλ quzλ .                                              (8.39)                                                                        --><a id="eq:377"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:377} z^A_{\lambda +\epsilon }-z^A_\lambda =\epsilon \{z^A_\lambda ,G(z_\lambda )\}_{z_\lambda }.
+\end{equation}
+
+</p>
+
+<p>
+This can also be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{39}\)</span>
+
+<!--
+
+
+                                                           d A
+                                                            z “ ´tGpzλ q, zλA uzλ ,                                                 (8.40)                                                                        --><a id="eq:378"></a><!--
+                                                          dλ λ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:378} \boxed {\frac {d}{d\lambda } z^A_\lambda =-\{G(z_\lambda ),z^A_\lambda \}_{z_\lambda }},
+\end{equation}
+
+</p>
+
+<p>
+or, when using the property that Poisson brackets can be evaluated before or after a canonical transformation,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{40}\)</span>
+
+<!--
+
+                                                d A
+                                                  Z pz, λq “ ´tGpZpz, λqq, Z A pz, λquz .                                           (8.41)                                                                        --><a id="eq:379"></a><!--
+                                               dλ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:379} \frac {d}{d\lambda }Z^A(z,\lambda )=-\{G(Z(z,\lambda )),Z^A(z,\lambda )\}_z.
+\end{equation}
+
+</p>
+
+<p>
+Conversely, this equation determines uniquely a one-parameter group of canonical transformations close to the identity.
+</p>
+
+<p>
+For all functions \(F(z_\lambda )\) that do not depend explicitly on \(\lambda \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{41}\)</span>
+
+<!--
+
+
+                                     dF  BF dz A               BF
+                                        “ A λ “ ´tGpzλ q, zλA u A “ ´tGpzλ q, F pzλ quzλ .                                          (8.42)                                                                        --><a id="eq:380"></a><!--
+                                     dλ  Bzλ dλ                Bzλ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:380} \frac {d F}{d\lambda }=\frac {\partial F}{\partial z^A_\lambda }\frac {d z^A_\lambda }{d\lambda }=-\{G(z_\lambda ),z^A_\lambda \}\frac {\partial
+F}{\partial z^A_\lambda }=-\{G(z_\lambda ),F(z_\lambda )\}_{z_\lambda }.
+\end{equation}
+
+</p>
+
+<p>
+This implies in particular that \(\frac {d G(z_\lambda )}{d\lambda }=0\) if \(\frac {\partial G}{\partial \lambda }=0\). Assuming that \(G(z_\lambda )\) has no explicit \(\lambda \) dependence thus implies that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{42}\)</span>
+
+<!--
+
+
+                                                  d2 zλA
+                                                         “ tGpzλ q, tGpzλ q, zλA uzλ uzλ ,                                          (8.43)                                                                        --><a id="eq:381"></a><!--
+                                                  pdλq2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:381} \frac {d^2 z^A_\lambda }{(d\lambda )^2}=\{G(z_\lambda ),\{G(z_\lambda ), z^A_\lambda \}_{z_\lambda }\}_{z_\lambda },
+\end{equation}
+
+</p>
+
+<p>
+and, by iteration, that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{43}\)</span>
+
+<!--
+
+
+                                      dn zλA
+                                             “ p´1qn tGpzλ q, tGpzλ q, . . . , tGpzλ q, zλA uzλ uzλ uzλ ,                           (8.44)                                                                        --><a id="eq:382"></a><!--
+                                      pdλqn
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:382} \frac {d^n z^A_\lambda }{(d\lambda )^n} =(-1)^n\{G(z_\lambda ),\{G(z_\lambda ),\dots , \{G(z_\lambda ),z^A_\lambda \}_{z_\lambda }\}_{z_\lambda
+}\}_{z_\lambda },
+\end{equation}
+
+</p>
+
+<p>
+with \(n\) brackets. When using that \(z^A_0=z^A\) and by putting \(\lambda \) to zero, this gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{44}\)</span>
+
+<!--
+
+
+                                         dn zλA ˇˇ
+                                                   “ p´1qn tGpzq, tGpzq, . . . , tGpzq, z A uuu.                                    (8.45)                                                                        --><a id="eq:385"></a><!--
+                                         pdλqn λ“0
+                                                 ˇ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:385} \frac {d^n z^A_\lambda }{(d\lambda )^n}\Big |_{\lambda =0} =(-1)^n\{G(z),\{G(z),\dots , \{G(z),z^A\}\}\}.
+\end{equation}
+
+</p>
+
+<p>
+One then may write the function in a neighborhood of the identity in terms of its Taylor series as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{45}\)</span>
+
+<!--
+
+                                                    ÿ p´1qn λn
+                                      zλA “ z A `                  tGpzq, tGpzq, . . . , tGpzq, z A uuu.                            (8.46)                                                                        --><a id="eq:386"></a><!--
+                                                    n“1
+                                                             n!
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:386} z^A_\lambda =z^A+\sum _{n=1}\frac {(-1)^n\lambda ^n}{n!}\{G(z),\{G(z),\dots , \{G(z),z^A\}\}\}.
+\end{equation}
+
+</p>
+
+<p>
+This Taylor series may also be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{46}\)</span>
+
+<!--
+
+
+                                                      zλA “ e´λtG,¨u z A “ e´λvG z A .                                              (8.47)                                                                        --><a id="eq:383"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:383} {z^A_\lambda =e^{-\lambda \{G,\cdot \}} z^A=e^{-\lambda v_G}z^A}.
+\end{equation}
+
+</p>
+
+<p>
+Remarks:
+</p>
+
+<p>
+(i) When the generator of a one-parameter group of canonical transformations depends explicitly on the parameter \(\lambda \), it remains true that the one-parameter group is uniquely determined by the generator in a neighborhood of the identity.
+The explicit formula is however more involved than the exponential series above.
+</p>
+
+<p>
+(ii) Given initial conditions \(z_0^A=z^A\), the solution to the equations of motion \(z^A_t=z^A(z_0,t)\) is a one-parameter group of canonical transformations whose generator is the Hamiltonian. This follows from the fact that, when
+\(\lambda =t\) and \(G=H\), the equations <span class="textup">(<a href="node-8.html#eq:378">8.40</a>)</span> coincide with Hamilton’s equations of motion. Furthermore, if \(H\) does not explicitly depend on time,
+\(\frac {\partial H}{\partial t}=0\), the solution of the equations of motion may be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{47}\)</span>
+
+<!--
+
+
+                                                              zt “ e´ttH,¨u z,                                                      (8.48)                                                                        --><a id="eq:387"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+z_t=e^{-t\{H,\cdot \}}z\label {eq:387},
+\end{equation}
+
+</p>
+
+<p>
+in a neighborhood of the identity.
+</p>
+
+<p>
+(iii) If \(K(z)\) is a first integral that does not depend explicitly on time, \(\{K,H\}=0\), it follows that \(K(z_t)=K(z_0)\). Indeed, \(\frac {d K(z_t)}{dt}=\{K(z_t),H(z_t)\}_{z_t}=0\).
+</p>
+
+<p>
+(iv) Conversely, when considering the one-parameter group of canonical transformations \(z^A_\lambda \) generated by the first integral \(K(z)\) which does not depend explicitly on time, for a Hamiltonian that does not explicitly on \(\lambda \),
+it follows that \(H(z_\lambda ,t)=H(z_0,t)\) since \(\frac {d H(z_\lambda ,t)}{d \lambda }=-\{K(z_\lambda ),H(z_\lambda ,t)\}_{z_\lambda }=0\) so that \(H(z_\lambda ,t)=H(z_0,t)\).
+</p>
+
+<p>
+The general case when the generator depends explicitly on the parameter can be found in the handwritten “french” notes.
+</p>
+<!--
+...... section Liouville theorem ......
+-->
+<h4 id="autosec-91"><span class="sectionnumber">8.5&#x2003;</span>Liouville theorem</h4>
+<a id="mechanics-autopage-91"></a>
+
+
+<a id="sec:liouville-theorem"></a>
+
+<p>
+For a system of first order differential equations,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{48}\)</span>
+
+<!--
+
+
+                                                      x9 a “ v a pxb , tq,   a, b “ 1, . . . , n,                                    (8.49)                                                                         --><a id="eq:388"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:388} \dot x^a=v^a(x^b,t),\quad a,b=1,\dots ,n,
+\end{equation}
+
+</p>
+
+<p>
+there is existence and uniqueness for the solution of the inital value problem,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{49}\)</span>
+
+<!--
+
+
+                                               xat “ X a pt; xb0 , t0 q,     X a pt0 ; xb0 , t0 q “ xa0 ,                            (8.50)                                                                         --><a id="eq:389"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:389} x^a_t=X^a(t;x_0^b,t_0),\quad X^a(t_0;x_0^b,t_0)=x^a_0,
+\end{equation}
+
+</p>
+
+<p>
+under suitable conditions which we assume to be satisfied.
+</p>
+
+<p>
+One may also interpret this equation as (time dependent) transformations that map the points with coordinates \(x^a_0\) to the points with coordinates \(x^a_t\). This group of transformation is also called a “flow”, in analogy with fluid mechanics.
+</p>
+
+<p>
+Consider then a function \(\rho (x^a,t)\) and its integral over a domain \(\mathcal {D}(t)\) of \(\mathbb R^n\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{50}\)</span>
+
+<!--
+
+                                                                ż
+                                                       Iptq “            ρpx, tqdx1 . . . dxn .                                      (8.51)                                                                         --><a id="eq:390"></a><!--
+                                                                  Dptq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:390} I(t)=\int _{\mathcal {D}(t)}\rho (x,t) dx^1\dots dx^n.
+\end{equation}
+
+</p>
+
+<p>
+When using the flow, to each point of the domain \(\mathcal {D}(t)\) corresponds a single point at a time \(t&apos;\). This defines the domain \(\mathcal {D}(t&apos;)\).
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-93"></a>
+
+<p>
+
+<a href="flow.png" target="_blank" ><img
+   src="flow.png"
+   style="
+   width:182pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-13" ></a >
+Figure&nbsp;8.1: Flow of the points of a domain
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+One wants to understand how the integral changes in time,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{51}\)</span>
+
+<!--
+
+                                                        ż                                           ż
+                                                                                            n
+                                         1
+                                     Ipt q ´ Iptq “                         1      1
+                                                                    ρpx, t qdx . . . dx ´                      ρpx, tqdx1 . . . dxn .            (8.52)                                            --><a id="eq:391"></a><!--
+                                                           Dpt1 q                                       Dptq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:391} I(t&apos;)-I(t)=\int _{\mathcal {D}(t&apos;)}\rho (x,t&apos;) dx^1\dots dx^n-\int _{\mathcal {D}(t)}\rho (x,t) dx^1\dots dx^n.
+\end{equation}
+
+</p>
+
+<p>
+In order to do so, one uses that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{52}\)</span>
+
+<!--
+
+                                                                                                       ˘ˇˇ BX a ˇˇ
+                                    ż                                        ż
+                                                                                      `
+                                              ρpx, t1 qdx1 . . . dxn “               ρ Xpt1 ; x, tq, t1 ˇ b ˇdx1 . . . dxn ,                     (8.53)                                            --><a id="eq:392"></a><!--
+                                     Dpt1 q                                     Dptq                       Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\int _{\mathcal {D}(t&apos;)}\rho (x,t&apos;) dx^1\dots dx^n=\int _{\mathcal {D}(t)}\rho \big (X(t&apos;;x,t),t&apos;\big )\Big |\frac {\partial X^a}{\partial x^b}\Big
+|dx^1\dots dx^n,\label {eq:392}
+\end{equation}
+
+</p>
+
+<p>
+to bring back the integral over the new domain to an integral over the old domain.
+</p>
+
+<p>
+To see that this is indeed the case, take an example in \(1\) dimension. Remember that for a definite integral,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{53}\)</span>
+
+<!--
+
+                                                                                 ż x“b
+                                                                          I“             f pxqdx,                                                (8.54)                                            --><a id="eq:397"></a><!--
+                                                                                  x“a
+
+-->
+
+<p>
+
+\begin{equation}
+I=\int _{x=a}^{x=b} f(x) dx,\label {eq:397}
+\end{equation}
+
+</p>
+
+<p>
+if one makes a change of variables, \(x=g(y)\), the integral becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{54}\)</span>
+
+<!--
+
+                                                                         ż y“g´1 pbq
+                                                                                                   dg
+                                                              I“                        f pgpyqq      dy.                                        (8.55)                                            --><a id="eq:398"></a><!--
+                                                                          y“g ´1 paq               dy
+
+-->
+
+<p>
+
+\begin{equation}
+I=\int ^{y=g^{-1}(b)}_{y=g^{-1}(a)} f(g(y))\frac {dg}{dy}dy.\label {eq:398}
+\end{equation}
+
+</p>
+
+<p>
+Take the domain at time \(\mathcal {D}(t)\) to be the set of points that belong to the interval \([a,b]\), \(x_t\in [a,b]\) and
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{55}\)</span>
+
+<!--
+
+                                                                                 ż x“b
+                                                                        Iptq “           ρpx, tqdx.                                              (8.56)                                            --><a id="eq:393"></a><!--
+                                                                                  x“a
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:393} I(t)=\int ^{x=b}_{x=a}\rho (x,t) dx.
+\end{equation}
+
+</p>
+
+<p>
+Under the map \(x_{t&apos;}=X(t&apos;;x,t)\), the end-point of the new domain \(\mathcal {D}(t&apos;)\) are \(X(t&apos;;a,t)\) and \(X(t&apos;;b,t)\), the images of \(x_t=a\) and \(x_t=b\). It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{56}\)</span>
+
+<!--
+
+                                                                           ż x“Xpt1 ;b,tq
+                                                                    1
+                                                             Ipt q “                        ρpx, t1 qdx.                                         (8.57)                                            --><a id="eq:394"></a><!--
+                                                                             x“Xpt1 ;a,tq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:394} I(t&apos;)=\int ^{x=X(t&apos;;b,t)}_{x=X(t&apos;;a,t)}\rho (x,t&apos;)dx.
+\end{equation}
+
+</p>
+
+<p>
+When doing the change of variables \(x=X(t&apos;;y,t)\) it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{57}\)</span>
+
+<!--
+
+                                   ż y“X ´1 pt1 ;Xpt1 ;b,tq,tq“b                                           ż x“b
+                                                                 `                 ˘ BX                             `                 ˘ BX
+                       Ipt1 q “                                 ρ Xpt1 ; y, tq, t1      dy “                       ρ Xpt1 ; x, tq, t1      dx,   (8.58)                                            --><a id="eq:395"></a><!--
+                                    y“X ´1 pt1 ;Xpt1 ;a,tq,tq“a                      By                        x“a                      Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:395} I(t&apos;)=\int ^{y=X^{-1}(t&apos;;X(t&apos;;b,t),t)=b}_{y=X^{-1}(t&apos;;X(t&apos;;a,t),t)=a}\rho \big (X(t&apos;;y,t),t&apos;\big )\frac {\partial
+X}{\partial y}dy=\int ^{x=b}_{x=a}\rho \big (X(t&apos;;x,t),t&apos;\big )\frac {\partial X}{\partial x}dx,
+\end{equation}
+
+</p>
+
+<p>
+and thus, by generalizing to multiple variables and integrals,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{58}\)</span>
+
+<!--
+
+
+                                                                                    ˘ˇˇ BX a ˇˇ
+                                                       ż      ” `                                   ı
+                                    Ipt1 q ´ Iptq “            ρ X a pt1 ; x, tq, t1 ˇ b ˇ ´ ρpx, tq dx1 . . . dxn .                             (8.59)                                            --><a id="eq:396"></a><!--
+                                                         Dptq                           Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:396} \boxed {I(t&apos;)-I(t)=\int _{\mathcal {D}(t)}\Big [\rho \big (X^a(t&apos;;x,t),t&apos;\big )\Big |\frac {\partial X^a}{\partial x^b}\Big |-\rho
+(x,t)\Big ]dx^1\dots dx^n}.
+\end{equation}
+
+</p>
+
+<p>
+In particular, it follows that \(I(t&apos;)=I(t)\) if \(\rho \) is constant and the Jacobian unity, \(|\partial X/\partial x|=1\). If \(\rho =1\), \(I(t)\) represents the volume of \(\mathcal {D}(t)\) which remains constant for a
+flow with unit Jacobian.
+</p>
+
+<p>
+Consider transformations on phase space, so that the coordinates \(x^a\) are now the coordinates \(z^A\). For a canonical transformation, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{59}\)</span>
+
+<!--
+
+
+                                             Bz 1A CD Bz 1B                                                              Bz 1A
+                                                  ω         “ ω AB ðñ JωJ T “ ω,                               J AB “          ,                 (8.60)                                            --><a id="eq:399"></a><!--
+                                             Bz C     Bz D                                                               Bz B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:399} \frac {\partial z&apos;^A}{\partial z^C}\omega ^{CD}\frac {\partial z&apos;^B}{\partial z^D}=\omega ^{AB} \iff J\omega J^T=\omega ,\quad {J^A}_B=\frac
+{\partial z&apos;^A}{\partial z^B},
+\end{equation}
+
+</p>
+
+<p>
+it follows that \({\rm det}\, J=\pm 1\) since \({\rm det}\,\omega =1\neq 0\). For all canonical transformations connected to the identity, one thus has by continuity that \({\rm det}\, J=1\). (One may show further that this is the
+case for all canonical transformations.) Since the Hamiltonian evolution is a one-parameter group of canonical transformations, with unit Jacobian, we have:
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-94"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">9</span></span><span class="amsthmnoteplain"> (Liouville)</span>. </span> The
+volume of any domain of phase space is preserved under Hamiltonian time evolution.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Let us now analyse the consequence of <span class="textup">(<a href="node-8.html#eq:396">8.59</a>)</span> for an infinitesimal flow, \(t&apos;=t+\epsilon \). In this case,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{60}\)</span>
+
+<!--
+
+
+                                             X a pt ` ϵ; xb , tq “ xa ` ϵv a pxb , tq ` Opϵ2 q,                     (8.61)                                                    --><a id="eq:400"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:400} X^a(t+\epsilon ;x^b,t)=x^a+\epsilon v^a(x^b,t)+\mathcal {O}(\epsilon ^2),
+\end{equation}
+
+</p>
+
+<p>
+while
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{61}\)</span>
+
+<!--
+
+                                        ˇ BX a ˇ ˇ      Bv a                Bv a
+                                        ˇ b ˇ “ ˇδba ` ϵ b ` Opϵ2 q| “ 1 ` ϵ a ` Opϵ2 q.                            (8.62)
+                                        ˇ      ˇ ˇ
+                                                                                                                                                                              --><a id="eq:401"></a><!--
+                                          Bx            Bx                  Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:401} \Big |\frac {\partial X^a}{\partial x^b}\Big |=\Big |\delta ^a_b+\epsilon \frac {\partial v^a}{\partial x^b}+\mathcal O(\epsilon ^2)|=1+\epsilon \frac
+{\partial v^a}{\partial x^a}+\mathcal O(\epsilon ^2).
+\end{equation}
+
+</p>
+
+<p>
+As a consequence,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{62}\)</span>
+
+<!--
+
+                                                                                              Bv a
+                                                                ż
+                              dIptq       Ipt ` ϵq ´ Iptq                ” Bρ        Bρ a
+                                    “ lim                 “                     `      a
+                                                                                         v ` ρ a sdx1 . . . dxn .   (8.63)                                                    --><a id="eq:402"></a><!--
+                               dt     ϵÑ0        ϵ                Dptq    Bt        Bx        Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:402} \frac {dI(t)}{dt}=\lim _{\epsilon \to 0}\frac {I(t+\epsilon )-I(t)}{\epsilon } =\int _{\mathcal D(t)}\Big [\frac {\partial \rho }{\partial t}+\frac
+{\partial \rho }{\partial x^a}v^a+\rho \frac {\partial v^a}{\partial x^a}] dx^1\dots dx^n.
+\end{equation}
+
+</p>
+
+<p>
+It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{63}\)</span>
+
+<!--
+
+                                            dIptq               Bρ   B
+                                                  “ 0, @Dptq ðñ    ` a pρv a q “ 0.                                 (8.64)                                                    --><a id="eq:403"></a><!--
+                                             dt                 Bt  Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:403} \frac {d I(t)}{dt}=0,\ \forall \mathcal D(t) \iff \frac {\partial \rho }{\partial t} + \frac {\partial }{\partial x^a}(\rho v^a)=0.
+\end{equation}
+
+</p>
+
+<p>
+The equation for \(\rho \) on the right hand side is called a “continuity equation”.
+</p>
+
+<p>
+For a Hamiltonian system, we have \(\rho =\rho (z,t)\), while \(v^a\to \omega ^{AB}\frac {\partial H}{\partial z^B}\), and the continuity equation becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{8.}{64}\)</span>
+
+<!--
+
+
+                                        Bρ   B       BH                             Bρ
+                                           ` A pρω AB B q “ 0 ðñ                       ` tρ, Hu “ 0 .               (8.65)                                                    --><a id="eq:404"></a><!--
+                                        Bt  Bz       Bz                             Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:404} \frac {\partial \rho }{\partial t} + \frac {\partial }{\partial z^A}(\rho \omega ^{AB}\frac {\partial H}{\partial z^B})=0\iff \boxed {\frac {\partial
+\rho }{\partial t}+\{\rho , H\}=0}.
+\end{equation}
+
+</p>
+
+<p>
+This is the Liouville equation in statistical mechanics, for which \(\rho =1\) is a particular solution.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

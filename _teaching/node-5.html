@@ -1,0 +1,2375 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Applications of the Lagrangian formalism</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-47"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Applications of the Lagrangian formalism ......
+-->
+<h3 id="autosec-47">Chapter&nbsp;<span class="sectionnumber">5&#x2003;</span>Applications of the Lagrangian formalism</h3>
+
+<a id="mechanics-autofile-5"></a>
+<!--
+...... section The simple pendulum ......
+-->
+<h4 id="autosec-48"><span class="sectionnumber">5.1&#x2003;</span>The simple pendulum</h4>
+<a id="mechanics-autopage-48"></a>
+
+
+<a id="sec:pendulum"></a>
+
+<p>
+Consider a point particle of mass \(m\) that is attached by means of a rigid bar of negligible mass to a fixed point \(O\). It is submitted to the gravitational force. The reaction force of the bar on the point particle is perpendicular to the motion and thus
+produces no work.
+</p>
+
+<p>
+We assume that the motion takes place in a vertical plane. For instance, this plane is determined by two straight lines, the first from \(O\) to the point particle when the pendulum is at equilibrium, and the second from \(O\) to the point where the particle is
+released with zero velocity.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-50"></a>
+
+<p>
+
+<a href="pendulum.png" target="_blank" ><img
+   src="pendulum.png"
+   style="
+   width:121pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-6" ></a >
+Figure&nbsp;5.1: Simple pendulum. Source: Sommerfeld, Mechanics, chapter III.15
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+Let us choose coordinates on \(\mathbb R^3\) where this plane is the plane \((x,z)\) with \(O\) sitting at the origin, so that the motion is constrained to take place on the circle \(S\) of radius \(l\) centered at the origin.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-52"></a>
+
+<p>
+
+<a href="pendulum2.png" target="_blank" ><img
+   src="pendulum2.png"
+   style="
+   width:121pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-7" ></a >
+Figure&nbsp;5.2: Coordinate system for planar motion
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+The equation for the constraint is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{0}\)</span>
+
+<!--
+
+
+                                                                                           x2 ` z 2 “ l 2 .                     (5.1)         --><a id="eq:190"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+x^2+z^2=l^2\label {eq:190}.
+\end{equation}
+
+</p>
+
+<p>
+Going to polar coordinates, with angle \(\theta \) chosen as the deviation from the negative \(z\) axis,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{1}\)</span>
+
+<!--
+
+
+                                                                                   x “ r sin θ,       z “ ´r cos θ,             (5.2)         --><a id="eq:191"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:191} x=r\sin \theta ,\quad z=-r\cos \theta ,
+\end{equation}
+
+</p>
+
+<p>
+the constraint becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{2}\)</span>
+
+<!--
+
+
+                                                                                              r ´ l “ 0.                        (5.3)         --><a id="eq:192"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:192} r-l=0.
+\end{equation}
+
+</p>
+
+<p>
+The Lagrange coordinate in this case is \(\theta \), and velocities are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{3}\)</span>
+
+<!--
+
+
+                                                                                   x9 “ l cos θ 9θ,    z9 “ l sin θ 9θ.         (5.4)         --><a id="eq:195"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:195} \dot x=l\cos \theta \dot \theta ,\quad \dot z=l\sin \theta \dot \theta .
+\end{equation}
+
+</p>
+
+<p>
+In terms of the Lagrange coordinate, the kinetic energy is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{4}\)</span>
+
+<!--
+
+                                                                             1                  1                 1
+                                                                       T “     mpx9 2 ` z9 2 q “ mpx9 2 ` z9 2 q “ ml2 θ92      (5.5)         --><a id="eq:194"></a><!--
+                                                                             2                  2                 2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:194} T=\frac 12 m (\dot x^2+\dot z^2)=\frac 12 m (\dot x^2+\dot z^2)=\frac 12 m l^2 \dot \theta ^2
+\end{equation}
+
+</p>
+
+<p>
+while the potential energy is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{5}\)</span>
+
+<!--
+
+
+                                                                                    V “ mgz “ ´mgl cos θ.                       (5.6)         --><a id="eq:193"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:193} V=mgz=-mgl\cos \theta .
+\end{equation}
+
+</p>
+
+<p>
+The Lagrangian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{6}\)</span>
+
+<!--
+
+                                                                                           1
+                                                                             L “ T ´ V “ mp l2 θ92 ` gl cos θq.                 (5.7)         --><a id="eq:196"></a><!--
+                                                                                           2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:196} L=T-V=m(\frac 12 l^2 \dot \theta ^2+gl\cos \theta ).
+\end{equation}
+
+</p>
+
+<p>
+The Euler-Lagrange derivative is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{7}\)</span>
+
+<!--
+
+                                                                             BL   d BL
+                                                                                ´         “ ´mgl sin θ ´ ml2 θ,
+                                                                                                             :                  (5.8)         --><a id="eq:197"></a><!--
+                                                                             Bθ   dt B θ9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:197} \frac {\partial L}{\partial \theta }-\frac {d}{dt}\frac {\partial L}{\partial \dot \theta }=-mgl\sin \theta -m l^2\ddot \theta ,
+\end{equation}
+
+</p>
+
+<p>
+and the equation of motion is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{8}\)</span>
+
+<!--
+
+                                                                                                                    g
+                                                                                   θ: ` ω 2 sin θ “ 0,      ω2 “      .         (5.9)         --><a id="eq:198"></a><!--
+                                                                                                                    l
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:198} \boxed {\ddot \theta +\omega ^2 \sin \theta =0,\quad \omega ^2=\frac {g}{l}}.
+\end{equation}
+
+</p>
+<!--
+...... subsection Small oscillations ......
+-->
+<h5 id="autosec-53"><span class="sectionnumber">5.1.1&#x2003;</span>Small oscillations</h5>
+<a id="mechanics-autopage-53"></a>
+
+
+<a id="sec:small-oscillations"></a>
+
+<p>
+For small oscillations, \(\theta \ll 1\), \(\sin \theta \sim \theta \), the equation describes “harmonic” oscillations, with general solution given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{9}\)</span>
+
+<!--
+
+                                                                                                    c
+                                                                                                        g
+                                                                       θptq “ A sinpωt ` φq,   ω“         .                                              (5.10)   --><a id="eq:199"></a><!--
+                                                                                                        l
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:199} \theta (t)=A\sin (\omega t+\varphi ),\quad \omega =\sqrt {\frac {g}{l}}.
+\end{equation}
+
+</p>
+<!--
+...... subsection Conservation of energy ......
+-->
+<h5 id="autosec-54"><span class="sectionnumber">5.1.2&#x2003;</span>Conservation of energy</h5>
+<a id="mechanics-autopage-54"></a>
+
+
+<a id="sec:conservation-energy"></a>
+
+<p>
+In the general case, like in many systems, the energy which is given by \(E=T+V\), or explicitly
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{10}\)</span>
+
+<!--
+
+                                                                                            1
+                                                                                      E “ mp l2 θ92 ´ gl cos θq,                                                                    (5.11)   --><a id="eq:201"></a><!--
+                                                                                            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:201} E=m(\frac 12 l^2 \dot \theta ^2-gl\cos \theta ),
+\end{equation}
+
+</p>
+
+<p>
+in the current case, is a conserved quantity. By this one means that the energy is constant on all solutions to the equations of motion. Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{11}\)</span>
+
+<!--
+
+                                                                                      d          9 θ: ` g sin θq
+                                                                                         E “ ml2 θp                                                                                 (5.12)   --><a id="eq:200"></a><!--
+                                                                                      dt                l
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:200} \frac {d}{dt}E=ml^2\dot \theta (\ddot \theta +\frac {g}{l}\sin \theta )
+\end{equation}
+
+</p>
+
+<p>
+vanishes for all solutions of <span class="textup">(<a href="node-5.html#eq:198">5.9</a>)</span>.
+</p>
+
+<p>
+Instead of solving the second order equation, whose general solution contains two integration constants, one may also solve the first order equation provided by <span class="textup">(<a
+href="node-5.html#eq:201">5.11</a>)</span>, which is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{12}\)</span>
+
+<!--
+
+                                                                                                     E
+                                                                                       θ92 “ 2ω 2 r     ` cos θs,                                                                   (5.13)   --><a id="eq:202"></a><!--
+                                                                                                    mgl
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:202} \dot \theta ^2=2\omega ^2[\frac {E}{mgl}+\cos \theta ],
+\end{equation}
+
+</p>
+
+<p>
+in terms of \(E\) and an additional integration constant. Since the left hand side of this equation is always positive, it follows in particular that \(E\) must be such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{13}\)</span>
+
+<!--
+
+                                                                                         E
+                                                                                            ě ´ cos θ ě ´1.                                                                         (5.14)   --><a id="eq:203"></a><!--
+                                                                                        mgl
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:203} \frac {E}{mgl}\geq -\cos \theta \geq -1.
+\end{equation}
+
+</p>
+<!--
+...... subsection Points of equilibrium ......
+-->
+<h5 id="autosec-55"><span class="sectionnumber">5.1.3&#x2003;</span>Points of equilibrium</h5>
+<a id="mechanics-autopage-55"></a>
+
+
+<a id="sec:points-equilibrium"></a>
+
+<p>
+The gradient of the potential
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{14}\)</span>
+
+<!--
+
+                                                                                           BV
+                                                                                              “ mgl sin θ      (5.15)   --><a id="eq:208"></a><!--
+                                                                                           Bθ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:208} \frac {\partial V}{\partial \theta }=mgl \sin \theta
+\end{equation}
+
+</p>
+
+<p>
+vanishes if and only if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{15}\)</span>
+
+<!--
+
+
+                                                                                      θ“0        or   θ “ π.   (5.16)   --><a id="eq:209"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:209} \theta =0\quad {\rm or}\quad \theta = \pi .
+\end{equation}
+
+</p>
+
+<p>
+These two possibilities define the points of equilibrium where the pendulum is at rest,
+</p>
+
+<p>
+\(\theta (t)=0\) or \(\theta (t)=\pi \). Since
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{16}\)</span>
+
+<!--
+
+
+                                                                                           B2 V
+                                                                                                “ mgl cos θ,   (5.17)   --><a id="eq:462"></a><!--
+                                                                                          pBθq2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:462} \frac {\partial ^{2}V}{(\partial \theta )^{2}}=mgl\cos \theta ,
+\end{equation}
+
+</p>
+
+<p>
+the former is a stable point of equilibrium whereas the latter is unstable.
+</p>
+<!--
+...... subsection Vanishing velocity ......
+-->
+<h5 id="autosec-56"><span class="sectionnumber">5.1.4&#x2003;</span>Vanishing velocity</h5>
+<a id="mechanics-autopage-56"></a>
+
+
+<a id="sec:vanishing-velocity"></a>
+
+<p>
+On account of relation&nbsp;<span class="textup">(<a href="node-5.html#eq:202">5.13</a>)</span>, the velocity vanishes if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{17}\)</span>
+
+<!--
+
+                                                                                    E
+                                                                      cos θ “ ´                                             (5.18)   --><a id="eq:204"></a><!--
+                                                                                   mgl
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:204} \cos \theta =-\frac {E}{mgl}
+\end{equation}
+
+</p>
+
+<p>
+which is possible only if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{18}\)</span>
+
+<!--
+
+                                                                              E
+                                                                     ´1 ď        ď 1.                                       (5.19)   --><a id="eq:205"></a><!--
+                                                                             mgl
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:205} -1\leq \frac {E}{mgl} \leq 1.
+\end{equation}
+
+</p>
+
+<p>
+Setting
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{19}\)</span>
+
+<!--
+
+                                                                            E
+                                                               cos α “ ´       ,   0 ď α ď π,                               (5.20)   --><a id="eq:206"></a><!--
+                                                                           mgl
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:206} \cos \alpha =-\frac {E}{mgl},\quad 0\leq \alpha \leq \pi ,
+\end{equation}
+
+</p>
+
+<p>
+we may write
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{20}\)</span>
+
+<!--
+
+
+                                                                 θ92 “ 2ω 2 pcos θ ´ cos αq.                                (5.21)   --><a id="eq:207"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:207} \dot \theta ^2=2\omega ^2(\cos \theta -\cos \alpha ).
+\end{equation}
+
+</p>
+
+<p>
+The velocity vanishes if \(\theta =\pm \alpha \).
+</p>
+<!--
+...... subsection Motion if ......
+-->
+<h5 id="autosec-57"><span class="sectionnumber">5.1.5&#x2003;</span>Motion if \(\alpha =\pi \)</h5>
+<a id="mechanics-autopage-57"></a>
+
+
+<a id="sec:motion-if-alphapi"></a>
+
+<p>
+In the case \(\alpha =\pi \), the relation becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{21}\)</span>
+
+<!--
+
+                                                                                  2g
+                                                                            θ92 “    pcos θ ` 1q.                                                                       (5.22)            --><a id="eq:210"></a><!--
+                                                                                   l
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:210} \dot \theta ^2=\frac {2g}{l}(\cos \theta +1).
+\end{equation}
+
+</p>
+
+<p>
+Since
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{22}\)</span>
+
+<!--
+
+                                                                      θ         θ
+                                                               θ    ei 2 ` e´i 2 2  eiθ ` e´iθ ` 2  1
+                                                        cos2     “p             q “                “ p1 ` cos θq,                                                       (5.23)            --><a id="eq:211"></a><!--
+                                                               2          2                4        2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:211} \cos ^2\frac {\theta }{2}=(\frac {e^{i\frac {\theta }{2}}+e^{-i\frac {\theta }{2}}}{2})^2=\frac {e^{i\theta }+e^{-i\theta }+2}{4}=\frac {1}{2}(1+\cos
+\theta ),
+\end{equation}
+
+</p>
+
+<p>
+this becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{23}\)</span>
+
+<!--
+
+                                                                                      4g     θ
+                                                                                θ92 “    cos2 ,                                                                         (5.24)            --><a id="eq:212"></a><!--
+                                                                                       l     2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:212} \dot \theta ^2=\frac {4g}{l}\cos ^2\frac {\theta }{2},
+\end{equation}
+
+</p>
+
+<p>
+so that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{24}\)</span>
+
+<!--
+
+
+                                                                                θ           d θ2
+                                                                    θ9 “ ˘2ω cos ðñ ˘ωdt “        .                                                                     (5.25)            --><a id="eq:213"></a><!--
+                                                                                2          cos θ2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:213} \dot \theta =\pm 2\omega \cos \frac {\theta }{2}\iff \pm \omega dt=\frac {d\frac {\theta }{2}}{\cos \frac {\theta }{2}}.
+\end{equation}
+
+</p>
+
+<p>
+By integration, it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{25}\)</span>
+
+<!--
+
+                                                                                  “       x π ‰θ
+                                                                     ˘ωpt ´ t0 q “ ln tanp ` q θ .                                                                      (5.26)            --><a id="eq:214"></a><!--
+                                                                                          4 4 0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:214} \pm \omega (t-t_0)=\big [\ln \tan (\frac {x}{4}+\frac {\pi }{4})\big ]^\theta _{\theta _0}.
+\end{equation}
+
+</p>
+
+<p>
+Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{26}\)</span>
+
+<!--
+
+
+                                                                                     d        x π             cosp x4 ` π4 q                   1              1
+                                                                                       ln tanp ` q “        x                         “                  “          .                                                 (5.27)
+                                                                                    dx        4 4    4 sinp 4 ` π4 q cos2 p x4 ` π4 q   2 sinp x2 ` π2 q   2 cos x2
+
+-->
+
+<p>
+
+\begin{equation}
+\frac {d}{dx}\ln \tan (\frac {x}{4}+\frac {\pi }{4})= \frac {\cos (\frac {x}{4}+\frac {\pi }{4})}{4\sin (\frac {x}{4}+\frac {\pi }{4})\cos ^2(\frac {x}{4}+\frac {\pi
+}{4})} =\frac {1}{2\sin (\frac {x}{2}+\frac {\pi }{2})}=\frac {1}{2\cos \frac x2}.
+\end{equation}
+
+</p>
+
+<p>
+Let us assume that \(t_0=0\), \(\theta _0=0\), and \(\dot \theta (t_0)&gt;0\). This means that one has to choose the plus sign in equations <span class="textup">(<a href="node-5.html#eq:213">5.25</a>)</span>
+and <span class="textup">(<a href="node-5.html#eq:214">5.26</a>)</span> and that the pendulum starts at the stable point of equilibrium with an initial velocity such that one may reach the unstable point of equilibrium.
+Equation <span class="textup">(<a href="node-5.html#eq:214">5.26</a>)</span> simplifies to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{27}\)</span>
+
+<!--
+
+                                                                                        θ π
+                                                                            ωt “ ln tanp ` q,                                                                           (5.28)            --><a id="eq:216"></a><!--
+                                                                                        4 4
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:216} \omega t=\ln \tan (\frac {\theta }{4}+\frac {\pi }{4}),
+\end{equation}
+
+</p>
+
+<p>
+and the time to reach \(\theta =\pi \) diverges,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{28}\)</span>
+
+<!--
+
+                                                                                      θ π
+                                                                          lim ln tan p ` q “ 8.                                                                         (5.29)            --><a id="eq:217"></a><!--
+                                                                          θÑπ         4 4
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:217} \lim _{\theta \to \pi }\ln \tan {(\frac {\theta }{4}+\frac {\pi }{4})}=\infty .
+\end{equation}
+
+</p>
+<!--
+...... subsection Oscillations ......
+-->
+<h5 id="autosec-58"><span class="sectionnumber">5.1.6&#x2003;</span>Oscillations</h5>
+<a id="mechanics-autopage-58"></a>
+
+
+<a id="sec:oscillations"></a>
+
+<p>
+Consider now the case where \(0&lt;\alpha &lt;\pi \), or equivalently, on account of <span class="textup">(<a href="node-5.html#eq:206">5.20</a>)</span>, the case where \(-1&lt;\frac {E}{mgl}&lt;1\).
+</p>
+
+<p>
+From \(\ddot \theta =-\frac {g}{l}\sin \theta \) and the fact that \(\sin \theta &gt;0\) for \(\theta =\alpha &gt; 0\), it follows that the acceleration is negative while we have already seen that the velocity vanishes.
+Hence, if \(\theta \) was increasing towards \(\alpha \), it will start decreasing after reaching \(\alpha \). For \(\theta =-\alpha &lt;0\), \(\sin \theta &lt;0\), the acceleration is positive and if \(\theta \) was decreasing
+towards \(-\alpha \), it will start increasing after having reaching \(-\alpha \). We thus have an oscillation between \(-\alpha \) and \(\alpha \).
+</p>
+
+<p>
+Let us define
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{29}\)</span>
+
+<!--
+
+                                                                     1       E            1                      α
+                                                              k2 “     p1 `     q ðñ k 2 “ p1 ´ cos αq ðñ k “ sin ,                    0 ă k ă 1.                                                        (5.30)             --><a id="eq:218"></a><!--
+                                                                     2      mgl           2                      2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:218} k^2=\frac 12 (1+\frac {E}{mgl})\iff k^2=\frac 12 (1-\cos \alpha )\iff k=\sin \frac {\alpha }{2},\quad 0&lt;k&lt;1.
+\end{equation}
+
+</p>
+
+<p>
+The equation of motion <span class="textup">(<a href="node-5.html#eq:202">5.13</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{30}\)</span>
+
+<!--
+
+                                                                                                                             θ
+                                                                             θ92 “ 2ω 2 r2k 2 ` cos θ ´ 1s “ 4ω 2 rk 2 ´ sin2 s.                                                                         (5.31)             --><a id="eq:219"></a><!--
+                                                                                                                             2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:219} \dot \theta ^2=2\omega ^2[2k^2+\cos \theta -1]=4\omega ^2[k^2-\sin ^2\frac {\theta }{2}].
+\end{equation}
+
+</p>
+
+<p>
+The integral to be computed is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{31}\)</span>
+
+<!--
+
+                                                                                                          żθ
+                                                                                                    1              dξ
+                                                                                      ˘ωpt ´ t0 q “           b              .                                                                           (5.32)             --><a id="eq:220"></a><!--
+                                                                                                    2      θ0  k 2 ´ sin2 2ξ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:220} \pm \omega (t-t_0)=\frac {1}{2}\int ^\theta _{\theta _0}\frac {d\xi }{\sqrt {k^2-\sin ^2\frac {\xi }{2}}}.
+\end{equation}
+
+</p>
+
+<p>
+The change of variables \(\sin \frac {\theta }{2}=k\sin \varphi \), \(\sin \frac {\xi }{2}=k\sin \eta \), which implies that \(\frac 12 \cos \frac {\xi }{2}d\xi =k\cos \eta d\eta \), brings this
+integral to the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{32}\)</span>
+
+<!--
+
+                                                                                 żφ                               żφ             żφ
+                                                                             1             2k cos ηdη                 dη                dη
+                                                             ˘ωpt ´ t0 q “               ξ
+                                                                                           a                  “          ξ
+                                                                                                                           “        a               .                                                    (5.33)             --><a id="eq:221"></a><!--
+                                                                             2    φ0 cos 2   k 2 ´ k 2 sin2 η     φ0 cos 2       φ0  1 ´ k 2 sin2 η
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:221} \pm \omega (t-t_0)=\frac 12 \int ^\varphi _{\varphi _0} \frac {2k\cos \eta d\eta }{\cos {\frac {\xi }{2}} \sqrt {k^2-k^2\sin ^2\eta }}=\int ^\varphi
+_{\varphi _0}\frac {d\eta }{\cos \frac {\xi }{2}} =\int ^\varphi _{\varphi _0}\frac {d\eta }{\sqrt {1-k^2\sin ^2\eta }}.
+\end{equation}
+
+</p>
+
+<p>
+In terms of the elliptic integral of first kind defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{33}\)</span>
+
+<!--
+
+                                                                                              żφ
+                                                                                                       dη
+                                                                                 F pφ, kq “        a               “ ´F p´φ, kq,                                                                         (5.34)             --><a id="eq:222"></a><!--
+                                                                                              0     1 ´ k 2 sin2 η
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:222} F(\varphi ,k)=\int ^\varphi _0\frac {d\eta }{\sqrt {1-k^2\sin ^2\eta }}=-F(-\varphi ,k),
+\end{equation}
+
+</p>
+
+<p>
+we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{34}\)</span>
+
+<!--
+
+
+                                                                                      ˘ωpt ´ t0 q “ F pφ, kq ´ F pφ0 , kq.                                                                               (5.35)             --><a id="eq:223"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:223} \pm \omega (t-t_0)=F(\varphi ,k)-F(\varphi _0,k).
+\end{equation}
+
+</p>
+
+<p>
+The period \(T\) of the motion is determined as follows. Because \(k=\sin \frac {\alpha }{2}\) and \(\sin \frac {\theta }{2}=k\sin \varphi \), if \(\theta =\pm \alpha \), \(\varphi =\pm \frac {\pi }{2}\),
+while \(\theta =0\) corresponds to \(\varphi =0\). \(T\) is twice the time needed to go from \(-\alpha \) to \(\alpha \). Indeed, for \(\theta \) going from \(-\alpha \) to \(+\alpha \), \(\dot \theta \geq 0\), and one uses the
+\(+\)sign in <span class="textup">(<a href="node-5.html#eq:223">5.35</a>)</span>, so that the time needed is \(F(\frac {\pi }{2},k)-F(-\frac {\pi }{2},k)\). For \(\theta \) going from \(\alpha \) to
+\(-\alpha \), \(\dot \theta \leq 0\), and one uses the minus sign in <span class="textup">(<a href="node-5.html#eq:223">5.35</a>)</span>, so that the time needed is \(-[F(-\frac {\pi }{2},k)-F(\frac
+{\pi }{2},k)]\).
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{35}\)</span>
+
+<!--
+
+                                                                                  π            π            π
+                                                                        ωT “ 2rF p , kq ´ F pp´ , kqs “ 4F p , kq “ 4Kpkq,                                                                               (5.36)             --><a id="eq:224"></a><!--
+                                                                                  2            2            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:224} \omega T=2[ F(\frac {\pi }{2},k)-F((-\frac {\pi }{2},k)]=4F(\frac {\pi }{2},k)=4K(k),
+\end{equation}
+
+</p>
+
+<p>
+where the complete elliptic integral is defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{36}\)</span>
+
+<!--
+
+                                                                                                             π
+                                                                                                   Kpkq “ F p , kq.                                                                                      (5.37)             --><a id="eq:225"></a><!--
+                                                                                                             2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:225} K(k)=F(\frac {\pi }{2},k).
+\end{equation}
+
+</p>
+
+<p>
+Suppose now that \(k^2=\sin ^2\frac {\alpha }{2}\ll 1\), which means that oscillations are small, and let us develop in \(\sin ^2\frac {\alpha }{2}\). To first order, the period becomes
+</p>
+<span class="hidden"> \(\seteqnumber{0}{5.}{37}\)</span>
+
+
+<!--
+
+
+           ż π2                            ż π2
+      4                  dη            4                   1     α                α
+  T “             b                  “            dηp1 `     sin2 sin2 ηq ` Opsin4 q
+      ω     0      1 ´ sin 2 α    2
+                               sin η   ω     0             2     2                2
+                              2
+                                                                                                                                                    ż π2
+                                                                                                                                  4 π 1     α                                          α    2π     1    α          α
+                                                                                                                                 “ p ` sin2                 dηp1 ´ cos 2ηqq ` Opsin4     q“    p1 ` sin2 q ` Opsin4 q.   (5.38)--><a id="eq:1b"></a><!--
+                                                                                                                                  ω 2 4     2           0                              2    ω      4    2          2
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:1b} T=\frac {4}{\omega }\int ^{\frac {\pi }{2}}_0\frac {d\eta }{\sqrt {1 -\sin ^2\frac {\alpha }{2}\sin ^2\eta }} =\frac {4}{\omega }\int ^{\frac {\pi
+}{2}}_0 d\eta (1+\frac 12\sin ^2\frac {\alpha }{2}\sin ^2\eta )+O(\sin ^4\frac {\alpha }{2})\\= \frac {4}{\omega }(\frac {\pi }{2}+\frac 14\sin ^2\frac {\alpha }{2}
+\int ^{\frac {\pi }{2}}_0d\eta (1-\cos 2\eta ))+O(\sin ^4\frac {\alpha }{2})= \frac {2\pi }{\omega }(1+\frac 14 \sin ^2\frac {\alpha }{2}) +O(\sin ^4\frac {\alpha
+}{2}).
+\end{multline}
+The leading term is \(\frac {2\pi }{\omega }\), the period of the harmonic oscillator.
+</p>
+<!--
+...... subsection Revolutions ......
+-->
+<h5 id="autosec-59"><span class="sectionnumber">5.1.7&#x2003;</span>Revolutions</h5>
+<a id="mechanics-autopage-59"></a>
+
+
+<a id="sec:rev"></a>
+
+<p>
+The second generic case is when \(\frac {E}{mgl}&gt;1\), or equivalently \(k&gt;1\). The motion becomes a revolution since \(\dot \theta \) never vanishes, so it is either always strictly positive or strictly negative. \(\theta \) will thus
+become bigger than \(\pi \) or smaller than \(-\pi \). When setting \(k_1=\frac 1k\), \(k_1&lt;1\) and equation <span class="textup">(<a href="node-5.html#eq:219">5.31</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{38}\)</span>
+
+<!--
+
+                                                       2
+                                                    4ω              θ
+                                               θ92 “ 2 p1 ´ k12 sin2 q.                                        (5.39)                                                                                       --><a id="eq:r1"></a><!--
+                                                     k1             2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:r1} \dot \theta ^2=\frac {4\omega ^2}{k_1^2}(1-k_1^2\sin ^2\frac {\theta }{2}).
+\end{equation}
+
+</p>
+
+<p>
+Integrating, it now follows directly from the definition <span class="textup">(<a href="node-5.html#eq:222">5.34</a>)</span> that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{39}\)</span>
+
+<!--
+
+                                               żθ
+                            ω              1           dη             θ            θ0
+                        ˘      pt ´ t0 q “        b              “ F p , k1 q ´ F p , k1 q.                    (5.40)                                                                                       --><a id="eq:r2"></a><!--
+                            k1             2   θ0       2    2
+                                                   1 ´ k1 sin 2η      2            2
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:r2} \pm \frac {\omega }{k_1}(t-t_0)=\frac 12 \int ^{\theta }_{\theta _0} \frac {d\eta }{\sqrt {1-k^{2}_1\sin ^2\frac {\eta }{2}}}=F(\frac {\theta }{2},k_1)
+-F(\frac {\theta _0}{2},k_1).
+\end{equation}
+
+</p>
+
+<p>
+In this case, a period of one revolution corresponds to the time needed to go from \(\theta =-\pi \) to \(\theta =\pi \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{40}\)</span>
+
+<!--
+
+                                                    k1 π       k1
+                                           T “2       F p q “ 2 Kpk1 q.                                        (5.41)                                                                                       --><a id="eq:pr"></a><!--
+                                                    ω    2     ω
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:pr} T=2\frac {k_1}{\omega }F(\frac {\pi }{2})=2\frac {k_1}{\omega }K(k_1).
+\end{equation}
+
+</p>
+<!--
+...... section The brachystochrone ......
+-->
+<h4 id="autosec-60"><span class="sectionnumber">5.2&#x2003;</span>The brachystochrone</h4>
+<a id="mechanics-autopage-60"></a>
+
+
+<a id="sec:brachystochrone"></a>
+
+<p>
+The word means either “shortest time” or “the curve of quickest descent” and concerns a famous prize problem formulated by Bernoulli in the 17th century, and solved by himself, Newton and Leibniz. In the way it was solved by Bernoulli, it is famous
+in the history of mathematics because it has lead to the calculus of variations, which is at heart of the Lagrangian method.
+</p>
+<!--
+...... subsection Statement of the problem ......
+-->
+<h5 id="autosec-61"><span class="sectionnumber">5.2.1&#x2003;</span>Statement of the problem</h5>
+<a id="mechanics-autopage-61"></a>
+
+
+<a id="sec:statement-problem"></a>
+
+<p>
+Consider \(2\) points \(P\) and \(Q\) in a vertical plane, find the ideal constraint relating these two points that minimizes the time needed for a massive point particle sliding with no friction under the influence of gravity to reach \(Q\) when being released
+with zero velocity at \(P\).
+</p>
+<!--
+...... subsection Main equations ......
+-->
+<h5 id="autosec-62"><span class="sectionnumber">5.2.2&#x2003;</span>Main equations</h5>
+<a id="mechanics-autopage-62"></a>
+
+
+<a id="sec:transl-equat"></a>
+
+<p>
+Without loss of generality, we may choose a coordinate system such that the vertical plane is \((x,z)\) with the arrival point \(Q\) at the origin, \(Q:(0,0)\), and the initial point somewhere above, to the left, \(P:(x^*,z^*)\) with \(x^*&lt;0\) and
+\(z^*&gt;0\).
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-64"></a>
+
+<p>
+
+<a href="brach1.png" target="_blank" ><img
+   src="brach1.png"
+   style="
+   width:121pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-8" ></a >
+Figure&nbsp;5.3: Coordinate system for sliding particle
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+The time needed to fall by a distance
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{41}\)</span>
+
+<!--
+
+                                                           a
+                                                    ds “    dx2 ` dz 2                                         (5.42)                                                                                  --><a id="eq:215"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:215} \overline {ds}=\sqrt {dx^2+dz^2}
+\end{equation}
+
+</p>
+
+<p>
+is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{42}\)</span>
+
+<!--
+
+
+                                                                  |ds|
+                                                      |dt| “           ,                                       (5.43)                                                                                  --><a id="eq:226"></a><!--
+                                                                   v
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:226} |dt|=\frac {|\overline {ds}|}{v},
+\end{equation}
+
+</p>
+
+<p>
+where \(v\) is the magnitude of the velocity along the curve.
+</p>
+
+<p>
+One may describe the curve that one is looking for by the graph of the function \(x(z)\), with \(x(0)=0\) and \(x(z^*)=x^*\), so that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{43}\)</span>
+
+<!--
+
+                                                           b
+                                                               1 ` p dx
+                                                                     dz q
+                                                                         2
+                                                dt “ ´                       dz,                               (5.44)                                                                                  --><a id="eq:227"></a><!--
+                                                                  v
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:227} dt=-\frac {\sqrt {1+(\frac {dx}{dz})^2}}{v}dz,
+\end{equation}
+
+</p>
+
+<p>
+where the minus sign is due to the fact that if \(t\) increases, \(z\) decreases.
+</p>
+
+<p>
+Conservation of energy gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{44}\)</span>
+
+<!--
+
+                                           1              1
+                                             mv12 ` mgz1 “ mv22 ` mgz2 .                                       (5.45)                                                                                  --><a id="eq:228"></a><!--
+                                           2              2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:228} \frac 12 m v_1^2+mgz_1=\frac 12 mv_2^2+mgz_2.
+\end{equation}
+
+</p>
+
+<p>
+When applied to the current case with \(P\): \((x_2,z_2)=(x^*,z^*)\) and \(v_2=0\), while \((x_1,z_1)\) is a generic point \((x(z),z)\) along the curve where the velocity is \(v\), it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{45}\)</span>
+
+<!--
+
+                                    1                          a
+                                      mv 2 “ mgpz ˚ ´ zq ùñ v “ 2gpz ˚ ´ zq,                                   (5.46)                                                                                  --><a id="eq:229"></a><!--
+                                    2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:229} \frac 12 m v^2=mg(z^*-z)\Longrightarrow v=\sqrt {2g(z^*-z)},
+\end{equation}
+
+</p>
+
+<p>
+so that <span class="textup">(<a href="node-5.html#eq:227">5.44</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{46}\)</span>
+
+<!--
+
+                                                       d
+                                                             1 ` p dx
+                                                                   dz q
+                                                                       2
+                                               dt “ ´            ˚
+                                                                         dz.                                   (5.47)                                                                                  --><a id="eq:230"></a><!--
+                                                            2gpz ´ zq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:230} dt=-\sqrt {\frac {1+(\frac {dx}{dz})^2}{2g(z^*-z)}}dz.
+\end{equation}
+
+</p>
+
+<p>
+Integrating gives the time needed for the fall as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{47}\)</span>
+
+<!--
+
+                                                                     d
+                                                                          1 ` p dx
+                                                            ż0                       2
+                                                                                dz q
+                                        T “ t 0 ´ t˚ “ ´                      ˚
+                                                                                       dz.                     (5.48)                                                                                  --><a id="eq:231"></a><!--
+                                                                z˚       2gpz ´ zq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:231} T=t_0-t_{*}=-\int _{z^*}^0\sqrt {\frac {1+(\frac {dx}{dz})^2}{2g(z^*-z)}}dz.
+\end{equation}
+
+</p>
+
+<p>
+This time of fall is a functional of the function \(x(z)\), \(T=T[x(z)]\). But we know how to find extremals of such functionals. By the analogy \(T\leftrightarrow S\), \(x(z)\leftrightarrow q(\tau )\), the extremal with fixed end
+points is given functions for which the Euler-Lagrange derivative
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{48}\)</span>
+
+<!--
+
+                                           δL   BL   d BL                          dx
+                                              “    ´        ,              x1 “       ,                        (5.49)                                                                                  --><a id="eq:232"></a><!--
+                                           δz   Bx   dz Bx1                        dz
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:232} \frac {\delta L}{\delta z}=\frac {\partial L}{\partial x} -\frac {d}{dz}\frac {\partial L}{\partial x&apos;},\quad x&apos;=\frac {dx}{dz},
+\end{equation}
+
+</p>
+
+<p>
+vanishes with
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{49}\)</span>
+
+<!--
+
+                                                                d
+                                                                      1 ` p dx
+                                                                            dz q
+                                                                                 2
+                                             Lpx, x1 , zq “                        .                           (5.50)                                                                                  --><a id="eq:233"></a><!--
+                                                                     2gpz ˚ ´ zq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:233} L(x,x&apos;,z)=\sqrt {\frac {1+(\frac {dx}{dz})^2}{2g(z^*-z)}}.
+\end{equation}
+
+</p>
+
+<p>
+Since there is no explicit dependence on \(x\), the equation takes the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{50}\)</span>
+
+<!--
+
+                                                       d BL
+                                                              “ 0.                                             (5.51)                                                                                  --><a id="eq:234"></a><!--
+                                                       dz Bx1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:234} \frac {d}{dz}\frac {\partial L}{\partial x&apos;}=0.
+\end{equation}
+
+</p>
+<!--
+...... subsection Finding the curve ......
+-->
+<h5 id="autosec-65"><span class="sectionnumber">5.2.3&#x2003;</span>Finding the curve</h5>
+<a id="mechanics-autopage-65"></a>
+
+
+<a id="sec:finding-curve"></a>
+
+<p>
+This equation may be integrated once to get
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{51}\)</span>
+
+<!--
+
+                                                           BL
+                                                               “ c,                                                             (5.52)                                                                                      --><a id="eq:235"></a><!--
+                                                           Bx1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:235} \frac {\partial L}{\partial x&apos;}=c,
+\end{equation}
+
+</p>
+
+<p>
+for some integration constant \(c\), or more explicitly,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{52}\)</span>
+
+<!--
+
+                              d
+                          1       2gpz ˚ ´ zq    2x1                        x1
+                                                          “ c ðñ a                         “ c.                                 (5.53)                                                                                      --><a id="eq:236"></a><!--
+                          2        1 ` px1 q2 2gpz ˚ ´ zq         p1 ` px1 q2 q2gpz ˚ ´ zq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:236} \frac 12 \sqrt {\frac {2g(z^*-z)}{1+(x&apos;)^2}}\frac {2x&apos;}{2g(z^*-z)}=c\iff \frac {x&apos;}{\sqrt {(1+(x&apos;)^2)2g(z^*-z)}}=c.
+\end{equation}
+
+</p>
+
+<p>
+Taking the square in order to solve for \(x&apos;\) gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{53}\)</span>
+
+<!--
+
+
+               px1 q2 “ c2 p1 ` px1 q2 qp2gpz ˚ ´ zqq ðñ px1 q2 p1 ´ 2gc2 pz ˚ ´ zqq “ 2gc2 pz ˚ ´ zq,                          (5.54)                                                                                      --><a id="eq:237"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:237} (x&apos;)^2=c^2(1+(x&apos;)^2)(2g(z^*-z)) \iff (x&apos;)^2(1-2gc^2(z^*-z))=2gc^2(z^*-z),
+\end{equation}
+
+</p>
+
+<p>
+and then
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{54}\)</span>
+
+<!--
+
+                                         a                               ?
+                              1         c 2gpz ˚ ´ zq    z˚ ´ z                                       1
+                          x “ ˘a                  “ ˘a               ,                        2R “        .                     (5.55)                                                                                      --><a id="eq:238"></a><!--
+                                        2  ˚
+                                p1 ´ 2gc pz ´ zqq     2R ´ pz ˚ ´ zq                                 2gc2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:238} x&apos;=\pm \frac {c\sqrt {2g(z^*-z)}}{\sqrt {(1-2gc^2(z^*-z))}}=\pm \frac {\sqrt {z^*-z}}{\sqrt {2R-(z^*-z)}},\quad 2R=\frac {1}{2g c^2}.
+\end{equation}
+
+</p>
+
+<p>
+By integration, one gets
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{55}\)</span>
+
+<!--
+
+                                                         żz          ?
+                                                                      z˚ ´ z1
+                                            x ´ x˚ “ ˘         a                     dz 1 .                                     (5.56)                                                                                      --><a id="eq:241"></a><!--
+                                                          z˚       2R ´ pz ˚ ´ z 1 q
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:241} x-x^*=\pm \int _{z^*}^z \frac {\sqrt {z^*-z&apos;}}{\sqrt {2R-(z^*-z&apos;)}} dz&apos;.
+\end{equation}
+
+</p>
+
+<p>
+Setting
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{56}\)</span>
+
+<!--
+
+                                                                      θ
+                                          Z “ z ˚ ´ z “ 2R cos2         “ Rp1 ` cos θq,                                         (5.57)                                                                                      --><a id="eq:239"></a><!--
+                                                                      2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:239} Z=z^*-z=2R\cos ^2\frac {\theta }{2}=R(1+\cos \theta ),
+\end{equation}
+
+</p>
+
+<p>
+we have that \(z\) decreases from \(z^*\) to \(0\), \(z^*\geq z\geq 0\), while \(Z\) increases from \(0\) to \(z^*\), \(0\leq Z\leq z^*(\leq 2R)\), and then \(\theta \) decreases from \(\pi \) to some \(\theta _0\), \(\pi \geq
+\theta \geq \theta _0(\geq 0)\). The integral becomes
+</p>
+<span class="hidden"> \(\seteqnumber{0}{5.}{57}\)</span>
+
+
+<!--
+
+
+                ż z˚ ´z             ?    żθ                   ?        ξ       żθ
+                                 Z                   ξ    ξ 1 2R cos 2                    ξ
+  x´x “¯  ˚
+                          dZ ?        “˘    dξ2R2 cos sin     ?        ξ
+                                                                         “ ˘2R    dξ cos2
+                 0             2R ´ Z     π          2    2 2   2R sin 2        π         2
+                                                                                                                                                                         żθ
+                                                                                                                                                                  “ ˘R          dξp1 ` cos ξq “ ˘Rpθ ´ π ` sin θq,   (5.58)--><a id="eq:240"></a><!--
+                                                                                                                                                                            π
+
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:240} x-x^*=\mp \int _0^{z^*-z} dZ\frac {\sqrt Z}{\sqrt {2R-Z}}=\pm \int ^\theta _\pi d\xi 2R 2 \cos \frac {\xi }{2}\sin \frac {\xi }{2}\frac 12 \frac {\sqrt
+{2R}\cos \frac {\xi }{2}}{\sqrt {2R}\sin \frac {\xi }{2}}=\pm 2R\int ^\theta _\pi d\xi \cos ^2\frac {\xi }{2}\\ =\pm R\int ^\theta _\pi d\xi (1+\cos \xi )=\pm R(\theta
+-\pi +\sin \theta ),
+\end{multline}
+In order to fix the sign, starting from \(\theta =\pi \), \(z=z^*\), \(Z=0\), \(x=x^*\), let us now take \(x=x^*&lt;0\) and \(\theta =\pi -\alpha \) for small positive \(\alpha \). We then have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{58}\)</span>
+
+<!--
+
+
+                                                                                                                  α2                 α2
+                                    z ´ z ˚ “ ´Rp1 ` cos pπ ´ αqq “ ´Rp1 ´ cos αq “ ´Rp1 ´ p1 ´                      ` Opα4 qqq „ ´R    ă 0,                       (5.59)                                                   --><a id="eq:242"></a><!--
+                                                                                                                  2                  2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:242} z-z^*=-R(1+\cos {(\pi -\alpha )})=-R(1-\cos \alpha )=-R(1-(1-\frac {\alpha ^2}{2} +O(\alpha ^4)))\sim -R\frac {\alpha ^2}{2}&lt;0,
+\end{equation}
+
+</p>
+
+<p>
+so that \(z\) indeed decreases when \(\alpha \) increases. Furthermore,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{59}\)</span>
+
+<!--
+
+
+                                                                                                                      α3               α3
+                                    x ´ x˚ “ ˘Rp´α ` sin pπ ´ αqq “ ˘Rp´α ` sin αq “ ˘Rp´α ` α ´                         ` Opα5 qq „ ¯R ,                          (5.60)                                                   --><a id="eq:243"></a><!--
+                                                                                                                      3!               3!
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:243} x-x^*=\pm R(-\alpha +\sin {(\pi -\alpha )})=\pm R(-\alpha +\sin \alpha )= \pm R(-\alpha +\alpha -\frac {\alpha ^3}{3!}+O(\alpha ^5))\sim \mp R\frac
+{\alpha ^3}{3!},
+\end{equation}
+
+</p>
+
+<p>
+Since we want \(x\) to increase when \(\alpha \) increases, we need the lower (+) sign in the final expression, and thus the lower (-) sign in the final expression for \(x-x^*\) in <span class="textup">(<a
+href="node-5.html#eq:240">5.58</a>)</span>.
+</p>
+
+<p>
+The parametric equations for the curve we are looking for are thus
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{60}\)</span>
+
+<!--
+
+
+                                                         z ´ z ˚ “ ´Rp1 ` cos θq,             x ´ x˚ “ Rpπ ´ θ ´ sin θq .                                          (5.61)                                                   --><a id="eq:244"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:244} \boxed {z-z^*=-R(1+\cos \theta ),\quad x-x^*=R(\pi -\theta -\sin \theta )}.
+\end{equation}
+
+</p>
+
+<p>
+These are the equations for a cycloid, which is the curve followed by a point on the circumference of a disc that rolls without sliding on a line. More precisely, in the current case they describe an inverted cycloid.
+</p>
+
+<p>
+Indeed, the equations for a standard cycloid are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{61}\)</span>
+
+<!--
+
+
+                                                                      x “ apt ´ sin tq,       y “ ap1 ´ cos tq,                                                    (5.62)                                                   --><a id="eq:245"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:245} x=a(t-\sin t),\quad y=a(1-\cos t),
+\end{equation}
+
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-67"></a>
+
+<p>
+
+<a href="brach3.png" target="_blank" ><img
+   src="brach3.png"
+   style="
+   width:121pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-9" ></a >
+Figure&nbsp;5.4: Standard cycloid. <a href="https://mathworld.wolfram.com/Cycloid.html" target="_blank" >Source Wolfram MathWorld</a>
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+The identification in our case relies on \(t\to \pi -\theta \), \(a\to R\), \(x\to x-x^*\), \(y\to -(z-z^*)\).
+</p>
+
+<p>
+For a disc that rolls without sliding, one should have that the velocity of the center of the disc should be \(v=R\dot \theta =\sqrt {(\frac {dx_C}{dt})^2+(\frac {dz_C}{dt})^2}\), and thus, by multipliying by \(\frac
+{dt}{d\theta }\), \(R=\sqrt {(\frac {dx_C}{d\theta })^2+(\frac {dz_C}{d\theta })^2}\). Here we have that the motion of the center of the disc is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{62}\)</span>
+
+<!--
+
+
+                                                                 xC “ Rpπ ´ θq,      zC “ ´R,                                                                 (5.63)                         --><a id="eq:246"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:246} x_C=R(\pi -\theta ),\quad z_C=-R,
+\end{equation}
+
+</p>
+
+<p>
+so that \(\frac {dx_c}{d\theta }=-R\), \(\frac {dz_C}{d\theta }=0\), which indeed satisfies the required relation.
+</p>
+
+<p>
+Each point of the circumference of the disc is animated by the composition of this translation with a rotation around the center of the disc at \((-R,0)\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{63}\)</span>
+
+<!--
+
+
+                                                             xcirc “ ´R sin θ,    zcirc “ ´R cos θ.                                                           (5.64)                         --><a id="eq:247"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:247} x_{\rm circ}=-R\sin \theta ,\quad z_{\rm circ}=-R\cos \theta .
+\end{equation}
+
+</p>
+<!--
+...... subsection Properties of the motion ......
+-->
+<h5 id="autosec-68"><span class="sectionnumber">5.2.4&#x2003;</span>Properties of the motion</h5>
+<a id="mechanics-autopage-68"></a>
+
+
+<a id="sec:properties-motion"></a>
+
+<p>
+We start at \(\theta =\pi \), which corresponds to \((x^*,z^*)\), then \(\theta \) decreases to \(\theta _0\) which corresponds to \((0,0)\). This angle is determined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{64}\)</span>
+
+<!--
+
+                                                                z˚ ´ R
+                                      z ˚ “ Rp1 ` cos θ0 q ðñ          “ cos θ0 ,   x˚ “ Rpπ ´ θ0 ` sin θ0 q.                                     (5.65)                                    --><a id="eq:248"></a><!--
+                                                                   R
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:248} z^*=R(1+\cos \theta _0)\iff \frac {z^*-R}{R}=\cos \theta _0,\quad x^*=R(\pi -\theta _0+\sin \theta _0).
+\end{equation}
+
+</p>
+
+<p>
+It follows from <span class="textup">(<a href="node-5.html#eq:241">5.56</a>)</span> that \(z^*-z\geq 0\) and \(z^*-z\leq 2R\), so that, if \(z=0\), \(0\leq z^*\leq 2R\). From the first equation, it then follows
+that there exists \(\pi \geq \theta _0\geq 0\). The last equation then fixes the integration constant \(R\) in terms of the initial positions \(x^*,z^*\).
+</p>
+
+<p>
+The extremum for \(z\) is reached when \(\frac {dz}{d\theta }=R\sin \theta =0\), which implies that \(\theta =0\). It is a minimum since \(\frac {d^2z}{(d\theta )^2}=R\cos \theta \), which is positive at \(\theta
+=0\).
+</p>
+
+<p>
+Since in addition \(\frac {dx}{d\theta }=-R(1+\cos \theta )\), the velocity vanishes at \(\theta =\pi \) and \(\theta =-\pi \), and there is thus an oscillation between these two extreme values.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-70"></a>
+
+<p>
+
+<a href="brach4.png" target="_blank" ><img
+   src="brach4.png"
+   style="
+   width:182pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-10" ></a >
+Figure&nbsp;5.5: Cycloid oscillation
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+If \(z^*=2R\), \(z-2R=-R(1+\cos \theta )\), the extremum is at \((0,0)\) and the motion is along the whole branch of the cycloid.
+</p>
+
+<p>
+Finally, let us study the temporal dependence starting from <span class="textup">(<a href="node-5.html#eq:230">5.47</a>)</span>,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{65}\)</span>
+
+<!--
+
+                                                              d                            d
+                                                                   1 ` p dx
+                                                                         dz q2       dt      p dz  2    dx 2
+                                                                                               dθ q ` p dθ q
+                                                      dt “ ´                   dz ùñ    “ ´                  .                                              (5.66)   --><a id="eq:249"></a><!--
+                                                                  2gpz ˚ ´ zq        dθ        2gpz ˚ ´ zq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:249} dt=-\sqrt {\frac {1+(\frac {dx}{dz})^2}{2g(z^*-z)}}dz\Longrightarrow \frac {dt}{d\theta }=-\sqrt {\frac {(\frac {dz}{d\theta })^2 +(\frac {dx}{d\theta
+})^2}{2g(z^*-z)}}.
+\end{equation}
+
+</p>
+
+<p>
+Injecting the values for the cycloid,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{66}\)</span>
+
+<!--
+
+                                                              d                                d
+                                                         dt     pR sin θq2 ` pRp1 ` cos θqq2     R
+                                                            “´                               “´    .                                                        (5.67)   --><a id="eq:250"></a><!--
+                                                         dθ            2gRp1 ` cos θq            g
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:250} \frac {dt}{d\theta }=-\sqrt {\frac {(R\sin \theta )^2 +(R(1+\cos \theta ))^2}{2gR(1+\cos \theta )}}=-\sqrt {\frac {R}{g}}.
+\end{equation}
+
+</p>
+
+<p>
+The duration of the motion for a generic point on the cycloid is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{67}\)</span>
+
+<!--
+
+                                                                            d                  d
+                                                                    ˚           R                  R
+                                                               t´t “´             pθ ´ πq “          pπ ´ θq.                                               (5.68)   --><a id="eq:251"></a><!--
+                                                                                g                  g
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:251} t-t^*=-\sqrt {\frac {R}{g}}(\theta -\pi )=\sqrt {\frac {R}{g}}(\pi -\theta ).
+\end{equation}
+
+</p>
+
+<p>
+It follows that the duration of the fall from \((x^*,z^*)\) to \((0,0)\) is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{68}\)</span>
+
+<!--
+
+                                                                                       d
+                                                                                 ˚         R
+                                                                        tpθ0 q ´ t “         pπ ´ θ0 q.                                                     (5.69)   --><a id="eq:252"></a><!--
+                                                                                           g
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:252} t(\theta _0)-t^*=\sqrt {\frac {R}{g}}(\pi -\theta _0).
+\end{equation}
+
+</p>
+
+<p>
+More importantly, a half period corresponds to the motion from \(\pi \) to \(-\pi \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{69}\)</span>
+
+<!--
+
+                                                                                           d
+                                                                                     ˚         R
+                                                                          tp´πq ´ t “            2π.                                                        (5.70)   --><a id="eq:253"></a><!--
+                                                                                               g
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:253} t(-\pi )-t^*=\sqrt {\frac {R}{g}}2\pi .
+\end{equation}
+
+</p>
+
+<p>
+Since this is true for all \(z^*\), the period is independent of the amplitude, that is to say of the initial heigth, and the oscillation is isochronous.
+</p>
+
+<p>
+A video of this state of affairs can be found here,<br />
+<a href="https://www.facebook.com/TrustMyScience/videos/982002581956755/% " target="_blank" >https://www.facebook.com/TrustMyScience/videos/982002581956755/</a> .
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

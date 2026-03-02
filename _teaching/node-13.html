@@ -1,0 +1,862 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Charged particle in electromagnetic field</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-129"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Charged particle in electromagnetic field ......
+-->
+<h3 id="autosec-129">Chapter&nbsp;<span class="sectionnumber">13&#x2003;</span>Charged particle in electromagnetic field</h3>
+
+<a id="mechanics-autofile-13"></a>
+
+<p>
+A prerequisite for this chapter is the Lagrangian formulation of Maxwell’s equation using gauge potentials.
+</p>
+<!--
+...... section Newtonian formulation ......
+-->
+<h4 id="autosec-130"><span class="sectionnumber">13.1&#x2003;</span>Newtonian formulation</h4>
+<a id="mechanics-autopage-130"></a>
+
+
+<a id="sec:newt-form-charg"></a>
+
+<p>
+Empirical considerations have shown that the force that acts on a charged point particle under the influence of an electromagnetic field is given by the Lorentz force,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{0}\)</span>
+
+<!--
+
+                                                            ´             ¯
+                                                      F⃗ “ q E⃗ ` ⃗x9 ˆ B
+                                                                        ⃗ .                                                        (13.1)                                 --><a id="eq:405"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:405} \vec F= q\Big (\vec E+\dot {\vec x}\times \vec B\Big ).
+\end{equation}
+
+</p>
+
+<p>
+For a charged particle that moves at a non relativistic velocity \(v\ll c\), Newton’s second law thus implies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{1}\)</span>
+
+<!--
+
+                                                           ´             ¯
+                                                        :“q E
+                                                      m⃗x    ⃗ ` ⃗x9 ˆ B
+                                                                       ⃗ .                                                         (13.2)                                 --><a id="eq:406"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:406} m\ddot {\vec x}=q\Big (\vec E+\dot {\vec x}\times \vec B\Big ).
+\end{equation}
+
+</p>
+<!--
+...... section Lagrangian formulation ......
+-->
+<h4 id="autosec-131"><span class="sectionnumber">13.2&#x2003;</span>Lagrangian formulation</h4>
+<a id="mechanics-autopage-131"></a>
+
+
+<a id="sec:lagr-form"></a>
+
+<p>
+In order to derive the equations of motion <span class="textup">(<a href="node-13.html#eq:406">13.2</a>)</span> from a variational principle, one needs to describe the electromagnetic fields in terms of potentials, \(\phi
+(x^i,t), \vec A(x^i,t)\).
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{2}\)</span>
+
+<!--
+
+
+                                                  ⃗ “∇
+                                                  B  ⃗ ˆ A,
+                                                         ⃗         ⃗ “ ´Bt A
+                                                                   E       ⃗ ´ ∇ϕ,
+                                                                               ⃗                                                      (13.3)                                                 --><a id="eq:407"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:407} \vec B=\vec \nabla \times \vec A,\quad \vec E=-\partial _t \vec A-\vec \nabla \phi ,
+\end{equation}
+
+</p>
+
+<p>
+the appropriate Lagrangian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{3}\)</span>
+
+<!--
+
+
+                                                           1 92                ⃗ .
+                                                      L“     m⃗x ´ qϕ ` q⃗x9 ¨ A                                                      (13.4)                                                 --><a id="eq:409"></a><!--
+                                                           2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:409} \boxed {L=\frac {1}{2}m \dot {\vec x}^2-q\phi +q\dot {\vec x}\cdot \vec A}.
+\end{equation}
+
+</p>
+
+<p>
+Indeed, the associated Euler-Lagrange derivatives are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{4}\)</span>
+
+<!--
+
+
+                                                                                                      δL    d BL         BL     d              ` Bϕ          BAj ˘
+                                                                                                  ´       “           ´ i “ pmx9 i ` qAi q ` q         ´ x9 j i
+                                                                                                      δxi   dt B x9 i    Bx     dt                Bx i
+                                                                                                                                                   (13.5) Bx                                 --><a id="eq:410"></a><!--
+                                                                                                                       ` BAi j BAi ˘     ` Bϕ       BAj ˘
+                                                                                                          “ m:xi ` q         x9 `     `q      ´ x9 j i .
+                                                                                                                         Bxj       Bt     Bxi        Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:410} -\frac {\delta L}{\delta x^i}&amp;=\frac {d}{dt}\frac {\partial L}{\partial \dot x^i}-\frac {\partial L}{\partial x^i}=\frac {d}{dt}(m\dot
+x_i+q A_i)+q\big (\frac {\partial \phi }{\partial x^i}-\dot x^j\frac {\partial A_j}{\partial x^i}\big )\\ &amp;=m\ddot x_i+q\big (\frac {\partial A_i}{\partial x^j}\dot
+x^j+\frac {\partial A_i}{\partial t}\big )+q\big (\frac {\partial \phi }{\partial x^i}-\dot x^j\frac {\partial A_j}{\partial x^i}\big ). \end {split}
+\end{equation}
+
+</p>
+
+<p>
+Re-organizing, the associated equations of motion are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{5}\)</span>
+
+<!--
+
+                                       `             ˘        `            ˘
+                                 xi “ q Bi Aj ´ Bj Ai x9 j ´ q Bi ϕ ` Bt Ai “ qϵijk ϵklm Bl Am x9 j ´ qpBi ϕ ` Bt Ai q,
+                                m:                                                                                                                 (13.6)                                    --><a id="eq:411"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:411} m\ddot x_i=q\big (\partial _i A_j-\partial _jA_i\big )\dot x^j-q\big (\partial _i\phi +\partial _tA_i\big )=q\epsilon _{ijk}\epsilon ^{klm}\partial _l
+A_m\dot x^j-q(\partial _i\phi +\partial _t A_i),
+\end{equation}
+
+</p>
+
+<p>
+which coincide with <span class="textup">(<a href="node-13.html#eq:406">13.2</a>)</span>.
+</p>
+<!--
+...... section Hamiltonian formulation ......
+-->
+<h4 id="autosec-132"><span class="sectionnumber">13.3&#x2003;</span>Hamiltonian formulation</h4>
+<a id="mechanics-autopage-132"></a>
+
+
+<a id="sec:hamilt-form"></a>
+
+<p>
+The canonical momenta are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{6}\)</span>
+
+<!--
+
+                                                            BL                            1
+                                                    pi “           “ mx9 i ` qAi ðñ x9 i “ ppi ´ qAi q,                                                            (13.7)                                                 --><a id="eq:412"></a><!--
+                                                            B x9 i                        m
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:412} p_i=\frac {\partial L}{\partial \dot x^i}=m\dot x_i+qA_i \iff \dot x^i=\frac {1}{m}(p^i-q A^i),
+\end{equation}
+
+</p>
+
+<p>
+while the Hamiltonian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{7}\)</span>
+
+<!--
+
+                           “           ‰ˇ              1                 1 i                             1
+                        H “ pi x9 i ´ L ˇ 9x“ 9xpx,pq “ ppi ´ qAi qpi ´    pp ´ qAi qppi ´ qAi q ` qϕ ´ q ppi ´ qAi qAi .                                          (13.8)                                                 --><a id="eq:413"></a><!--
+                                                       m                2m                               m
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:413} H=\big [p_i\dot x^i-L\big ]\big |_{\dot x=\dot x(x,p)}=\frac {1}{m}(p^i-q A^i)p_i-\frac {1}{2m}(p^i-q A^i)(p_i-q A_i)+q\phi -q\frac {1}{m}(p^i-qA^i)A_i.
+\end{equation}
+
+</p>
+
+<p>
+After regrouping terms,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{8}\)</span>
+
+<!--
+
+
+                                                                        1 i
+                                                                H“        pp ´ qAi qppi ´ qAi q ` qϕ.                                                              (13.9)                                                 --><a id="eq:414"></a><!--
+                                                                       2m
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:414} \boxed {H=\frac {1}{2m}(p^i-q A^i)(p_i-q A_i)+q\phi .}
+\end{equation}
+
+</p>
+
+<p>
+In other words, as compared to the Hamiltonian of a free particle, \(H=\frac {1}{2m}p^i p_i\), the Hamiltonian of a charged particle in an electromagnetic field is obtained by adding the potential \(V=q\phi \) and the so-called rule of “minimal
+substitution”, \(p^i\to p^i-q A^i\).
+</p>
+
+<p>
+Remarks:
+</p>
+
+<p>
+(i) In the case of \(N\) particles with coordinates \(x^i_a\), mass \(m_a\) and charge \(q_a\), the Lagrangian becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{9}\)</span>
+
+<!--
+
+                                                      N
+                                                      ÿ”    1                                                             ı
+                                               L“             mpaq x9 ia x9 ai ´ qpaq ϕp⃗xa , tq ` qpaq x9 ia Ai p⃗xa , tq ,                                      (13.10)                                                 --><a id="eq:415"></a><!--
+                                                     a“1
+                                                            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:415} L=\sum _{a=1}^{N}\Big [\frac 12 m_{(a)}\dot x^i_a \dot x_{a i}-q_{(a)} \phi (\vec x_a,t)+q_{(a)}\dot x^i_a A_i(\vec x_a,t)\Big ],
+\end{equation}
+
+</p>
+
+<p>
+while the Hamiltonian is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{10}\)</span>
+
+<!--
+
+                                            N
+                                            ÿ”      1 “ i                     ‰“                      ‰                 ı
+                                     H“                 pa ´ qpaq Ai p⃗xa , tq pai ´ qpaq Ai p⃗xa , tq ` qpaq ϕp⃗xa , tq .                                        (13.11)                                                 --><a id="eq:416"></a><!--
+                                            a“1
+                                                  2mpaq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:416} H=\sum _{a=1}^{N}\Big [\frac {1}{2m_{(a)}}\big [p^i_a -q_{(a)}A^i(\vec x_a,t)\big ]\big [p_{a i} -q_{(a)}A_i(\vec x_a,t)\big ]+q_{(a)}\phi (\vec
+x_a,t)\Big ].
+\end{equation}
+
+</p>
+
+<p>
+One may rewrite the action associated to the Lagrangian <span class="textup">(<a href="node-13.html#eq:415">13.10</a>)</span> as \(S=S_P+S_I\), where the action for \(N\) free non-relativistic particles is given in <span
+class="textup">(<a href="node-12.html#eq:freepart">12.1</a>)</span>, while
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{11}\)</span>
+
+<!--
+
+                                                       N ”
+                                                       ÿ                                                   ı
+                                               SI “             ´ qpaq ϕp⃗xa , tq ` qpaq x9 ia Ai p⃗xa , tq ,                                           (13.12)                                               --><a id="eq:interaction"></a><!--
+                                                      a“1
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:interaction} S_I=\sum _{a=1}^{N}\Big [-q_{(a)} \phi (\vec x_a,t)+q_{(a)}\dot x^i_a A_i(\vec x_a,t)\Big ],
+\end{equation}
+
+</p>
+
+<p>
+which may be re-written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{12}\)</span>
+
+<!--
+
+                                                                       N                                        N
+                                                                                                                  qpaq dxi
+                                ż                                      ÿ                                        ÿ
+                         SI “       d4 xAµ pxqJ µ pxq,      J0 “           qpaq δ p3q p⃗x ´ ⃗xa ptqq,    Ji “                   δ p3q p⃗x ´ ⃗xa ptqq,             (13.13)                                                 --><a id="eq:418"></a><!--
+                                                                     a“1                                        a“1
+                                                                                                                      c    dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:418} S_I=\int d^4x A_\mu (x)J^\mu (x),\quad J^0=\sum _{a=1}^N q_{(a)}\delta ^{(3)}(\vec x-\vec x_a(t)),\quad J^i=\sum _{a=1}^N\frac {q_{(a)}}{c}\frac
+{dx^i}{dt}\delta ^{(3)}(\vec x-\vec x_a(t)),
+\end{equation}
+
+</p>
+
+<p>
+is the action that describes the interaction of the particles with the electromagnetic field.
+</p>
+
+<p>
+(ii) In order to distinguish more clearly the coordinates on which the electromagnetic fields and potentials depend from the position of the particles, it is often useful to change notation and describe the latter by \(z^i_a\) rather than \(x^i_a\).
+</p>
+
+<p>
+(iii) In relativistic notation, the current may be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{13}\)</span>
+
+<!--
+
+                                                                   N
+                                                                   ÿż            qpaq dxµa p4q ν
+                                                         J “µ
+                                                                            dτ            δ px ´ xνa pτ qq,                                                       (13.14)                                                 --><a id="eq:421"></a><!--
+                                                                   a“1
+                                                                                  c dτ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:421} J^\mu =\sum _{a=1}^N \int d\tau \frac {q_{(a)}}{c}\frac {dx^\mu _a}{d\tau }\delta ^{(4)}( x^\nu - x^\nu _a(\tau )),
+\end{equation}
+
+</p>
+
+<p>
+That this expression reduces to that in <span class="textup">(<a href="node-13.html#eq:418">13.13</a>)</span> can be seen as follows:
+</p>
+<span class="hidden"> \(\seteqnumber{0}{13.}{14}\)</span>
+
+
+<!--
+
+
+
+            qpaq dxµa p4q ν                                                                                                                                                 qpaq dxµa p3q
+   ż
+       dτ            δ px               ´             xνa pτ qq                                   “                                 ¨¨¨                     “                        δ p⃗x      ´            ⃗xa q   (13.15)--><a id="eq:423"></a><!--
+             c dτ                                                                                                                                                            c dτ
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:423} \int d\tau \frac {q_{(a)}}{c}\frac {dx^\mu _a}{d\tau }\delta ^{(4)}( x^\nu - x^\nu _a(\tau ))=\dots =\frac {q_{(a)}}{c}\frac {dx^\mu _a}{d\tau }\delta
+^{(3)}(\vec x-\vec x_a)
+\end{multline}
+where, in order to show the last equality, one uses the following property of the \(\delta \) function,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{13.}{15}\)</span>
+
+<!--
+
+                                                                   ż
+                                                                                                f px0 q
+                                                                       dxf pxqδpgpxqq “                    ,                                                      (13.16)                                                 --><a id="eq:422"></a><!--
+                                                                                               |g 1 px0 q|
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:422} \int dx f(x)\delta (g(x))=\frac {f(x_0)}{|g&apos;(x_0)|},
+\end{equation}
+
+</p>
+
+<p>
+where \(g(x)\) is a monotonic function that vanishes in \(x_0\), \(g(x_0)=0\).
+</p>
+
+<p>
+In this case, one needs to replace the action for the particles \(S_P\) by that appropriate for relativistic ones.
+</p>
+
+<p>
+complete by using Felsager exercise 1.4.1 pages 20,28 and equation 1.34 in reverse.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

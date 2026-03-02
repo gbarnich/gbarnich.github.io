@@ -1,0 +1,855 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Hamilton and least action principles</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-31"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Hamilton and least action principles ......
+-->
+<h3 id="autosec-31">Chapter&nbsp;<span class="sectionnumber">3&#x2003;</span>Hamilton and least action principles</h3>
+
+<a id="mechanics-autofile-3"></a>
+
+<p>
+In this chapter, Hamilton’s principle and the least action principle are derived from d’Alembert’s theorem. It is based on [<a href="node-14.html#LWR-ht-cite.0@Spindel2002">4</a>], chapter 2.1.
+</p>
+<!--
+...... section Natural and virtual trajectories ......
+-->
+<h4 id="autosec-32"><span class="sectionnumber">3.1&#x2003;</span>Natural and virtual trajectories</h4>
+<a id="mechanics-autopage-32"></a>
+
+
+<a id="sec:natur-virt-traj"></a>
+
+<p>
+Consider trajectories \(x^a=x^a(t)\) that pass through a fixed point at some initial time \(t_i\) and another fixed point at a final time \(t_f\), \(x^a(t_i)=x^a_i\), \(x^a(t_f)=x^a_f\). A natural trajectory is a trajectory that satisfies Newton’s
+equations together with the constraints. Virtual trajectories are trajectories that originate from a virtual displacement of a natural trajectory.
+</p>
+<figure id="autoid-5" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="virtual.png" target="_blank" ><img
+   src="virtual.png"
+   style="
+   width:173pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;3.1: Natural and virtual trajectories. Source: Script by N.&nbsp;Boulanger
+
+</div>
+
+<a id="fig:virtual"></a>
+
+</div>
+
+</figure>
+
+<p>
+As before, we consider infinitesimal virtual variations \(\delta x^a(t)\). In particular, infinitesimal means that we compute to first order in \(\delta x^a\). Furthermore, recall that such displacements commute with the time derivative,
+\(\delta \dot x^a(t)=\frac {d}{dt}\delta x^a\).
+</p>
+<!--
+...... section Hamilton’s principle ......
+-->
+<h4 id="autosec-34"><span class="sectionnumber">3.2&#x2003;</span>Hamilton’s principle</h4>
+<a id="mechanics-autopage-34"></a>
+
+
+<a id="sec:hamiltons-principle"></a>
+
+<p>
+According to d’Alembert’s theorem or principle, natural trajectories satisfy
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{0}\)</span>
+
+<!--
+
+
+                                                              :a ´ Fa qδxa « 0.
+                                                        pmpaq x                                                                        (3.1)                         --><a id="eq:138"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:138} (m_{(a)}\ddot x_a-F_a)\delta x^a\approx 0.
+\end{equation}
+
+</p>
+
+<p>
+By an integrations by parts, (which means here using Leibniz rule in the way that is done when doing integrations by parts), we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{1}\)</span>
+
+<!--
+
+                                             d
+                                               pm x9 a δxa q ´ mpaq x9 a δ x9 a ´ Fa δxa « 0.                                          (3.2)                         --><a id="eq:139"></a><!--
+                                             dt paq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:139} \frac {d}{dt}(m_{(a)} \dot x_a\delta x^a)-m_{(a)}\dot x_a\delta \dot x^a-F_a\delta x^a\approx 0.
+\end{equation}
+
+</p>
+
+<p>
+In terms of the kinetic energy and its variation, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{2}\)</span>
+
+<!--
+
+                                                      1
+                                                T “     m x9 a x9 a ,   δT “ mpaq x9 a δ x9 a .                                        (3.3)                         --><a id="eq:140"></a><!--
+                                                      2 paq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:140} T=\frac 12 m_{(a)} \dot x_a\dot x^a,\quad \delta T=m_{(a)}\dot x_a\delta \dot x^a.
+\end{equation}
+
+</p>
+
+<p>
+The last term on the left hand side of <span class="textup">(<a href="node-3.html#eq:139">3.2</a>)</span> is the infinitesimal work done by the applied forces,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{3}\)</span>
+
+<!--
+
+
+                                                              δW “ Fa δxa .                                                           (3.4)                         --><a id="eq:141"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:141} \cancel {\delta } W= F_a\delta x^a.
+\end{equation}
+
+</p>
+
+<p>
+The use of the symbol \(\cancel {\delta }\) is to indicate that in general \(F_a\delta x^a\) is not necessarily integrable and the variation of a single function.
+</p>
+
+<p>
+In these terms, D’Alembert’s principle can be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{4}\)</span>
+
+<!--
+
+                                                      d
+                                                        pm x9 a δxa q « δT ` δW.                                                      (3.5)                         --><a id="eq:144"></a><!--
+                                                      dt paq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:144} \frac {d}{dt}(m_{(a)} \dot x_a\delta x_a)\approx \delta T+\cancel {\delta } W.
+\end{equation}
+
+</p>
+
+<p>
+When integrating this relation along a natural trajectory, one gets
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{5}\)</span>
+
+<!--
+
+                                                 ”              ıtf ż tf
+                                                              a
+                                                  mpaq x9 a δx     «     dt rδT ` δW s.                                               (3.6)                         --><a id="eq:145"></a><!--
+                                                                ti      ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:145} \Big [m_{(a)} \dot x_a\delta x^a\Big ]^{t_f}_{t_i}\approx \int ^{t_f}_{t_i} dt\, [\delta T+\cancel {\delta } W].
+\end{equation}
+
+</p>
+
+<p>
+Limiting oneself to virtual instantaneous variations that do not change the end points, \(\delta x^a(t_i)=0=\delta x^a(t_f)\), we get:
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-35"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">4</span></span><span class="amsthmnoteplain"> (Hamilton’s principle)</span>.
+</span> A natural trajectory satisfies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{6}\)</span>
+
+<!--
+
+                                                        ż tf
+                                                               dt rδT ` δW s « 0,                             (3.7)                                  --><a id="eq:146a"></a><!--
+                                                         ti
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:146a} \int ^{t_f}_{t_i} dt\,[\delta T+\cancel {\delta } W]\approx 0,
+\end{equation}
+
+
+</p>
+
+<p>
+for all infinitesimal virtual variations compatible with the constraints and that keep the end points fixed.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+<!--
+...... section Least action principle ......
+-->
+<h4 id="autosec-36"><span class="sectionnumber">3.3&#x2003;</span>Least action principle</h4>
+<a id="mechanics-autopage-36"></a>
+
+
+<a id="sec:least-acti-princ"></a>
+
+<p>
+In the particular case when the forces derive from a potential,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{7}\)</span>
+
+<!--
+
+                                                              BV
+                                                     Fa “ ´       ðñ Fa δxa “ ´δV.                                                      (3.8)                                               --><a id="eq:142"></a><!--
+                                                              Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+F_a=-\frac {\partial V}{\partial x^a}\iff F_a\delta x^a=-\delta V. \label {eq:142}
+\end{equation}
+
+</p>
+
+<p>
+and \(\cancel {\delta } W=-\delta V\). In this case, suitable integrability conditions
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{8}\)</span>
+
+<!--
+
+                                                            B       B
+                                                               Fb ´ b Fa “ 0,                                                           (3.9)                                               --><a id="eq:143"></a><!--
+                                                           Bxa     Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:143} \frac {\partial }{\partial x^a} F_b-\frac {\partial }{\partial x^b} F_a=0,
+\end{equation}
+
+</p>
+
+<p>
+have to be satisfied. The force is conservative and the work does not depend on the path taken between the initial and the end points. We can write <span class="textup">(<a href="node-3.html#eq:146a">3.7</a>)</span> as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{9}\)</span>
+
+<!--
+
+                                              ż tf                         ż tf
+                                                     dt δpT ´ V q “ δ             dtpT ´ V q « 0,                                      (3.10)                                               --><a id="eq:147"></a><!--
+                                               ti                           ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:147} \int ^{t_f}_{t_i} dt\ \delta (T-V)=\delta \int ^{t_f}_{t_i} dt (T-V) \approx 0,
+\end{equation}
+
+</p>
+
+<p>
+where the variation commutes with integration since it is done at a fixed time. Defining the action, respectively the Lagrangian, as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{10}\)</span>
+
+<!--
+
+                                                                  ż tf
+                                                    Srxa ptqs “          dt L,     L “ T ´ V,                                          (3.11)                                               --><a id="eq:148"></a><!--
+                                                                   ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:148} S[x^a(t)]=\int ^{t_f}_{t_i} dt\ L,\quad L=T-V,
+\end{equation}
+
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-37"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">5</span></span><span class="amsthmnoteplain"> (Least action principle)</span>.
+</span> A natural trajectory is an extremal of the action,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{3.}{11}\)</span>
+
+<!--
+
+
+
+                                                                  δS « 0 ,                                                            (3.12)                                                                             --><a id="eq:146"></a><!--
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:146} \boxed {\delta S \approx 0},
+\end{equation}
+
+
+</p>
+
+<p>
+for all infinitesimal virtual variations compatible with the constraints and that keep the end points fixed.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Remarks:
+</p>
+
+<ul class="enumerate" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">1.</span> As in the finite dimensional case considered in the first chapter, where the problem of finding the extrema of a function of several variables, we thus have again an extremisation problem. The analogy is
+as follows: finding the extrema can be done by finding the points where the gradient vanishes. In the present case this corresponds to solving Newton’s equations. Alternatively, one is looking for the points where the variation of the function vanishes. In
+the present case, this corresponds to finding the trajectories that extremize the variation of the action. The object whose extremals one is searching for is no longer a function, but a functional, that is to say, the integral of a function \(L\) of several
+functions \(x^a(t)\) of time. Suppose for instance that \(x^a(t_i)=x^a(t_f)\). One may then develop the trajectories in terms of Fourier series,
+</p>
+<span class="hidden"> \(\seteqnumber{0}{3.}{12}\)</span>
+<!--
+                                                         8
+                                                   c0   ÿ           2πpt ´ ti q           2πpt ´ ti q
+                                        xa ptq “      `     can cos             ` san sin             ,                                  (3.13)                                                                             --><a id="eq:1"></a><!--
+                                                   2    n“0
+                                                                     tf ´ t i              tf ´ t i
+-->
+<p>
+
+\begin{equation}
+\label {eq:1} x^a(t)=\frac {c_0}{2}+\sum _{n=0}^\infty c^a_n \cos {\frac {2\pi (t-t_i)}{t_f-t_i}}+s^a_n \sin {\frac {2\pi (t-t_i)}{t_f-t_i}},
+\end{equation}
+
+</p>
+<p>
+so that, after substitution, the action becomes a function of the Fourier coefficients, \(S[x^a(t)]=S[c_0^a,c_n^a,s_n^a]\) and the extremisation problem becomes that of a function of an infinite, countable number of variables.
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">2.</span> How should one take the constraints into account ? Again there are two options. The first is to explicitly solve the constraints in terms of a number of independent variables \(q^\alpha (t)\) for the
+trajectories, and reduce the extremisation problem to one in those variables. This is what we will do in detail in the next chapter. The second approach consists in working with Lagrange multipliers, that now also become trajectories, and consider the
+unconstrained extremisation problem for the extended action
+</p>
+<span class="hidden"> \(\seteqnumber{0}{3.}{13}\)</span>
+<!--
+                                                      ż tf ”                                           ı
+                                  Srxa ptq, λm ptqs “     dt Lpxa ptq, x9 a ptqq ´ λm ptqGm pxa ptq, tq .                                 (3.14)                                                                         --><a id="eq:2a"></a><!--
+                                                         ti
+-->
+<p>
+
+\begin{equation}
+\label {eq:2a} S[x^a(t),\lambda ^m(t)]=\int _{t_i}^{t_f}dt\ \Big [ L(x^a(t),\dot x^a(t))-\lambda ^m(t) G_m(x^a(t),t)\Big ].
+\end{equation}
+
+</p>
+<p>
+
+</p>
+</li>
+</ul>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

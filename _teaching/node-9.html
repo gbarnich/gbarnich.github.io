@@ -1,0 +1,3551 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Noether’s theorem and Galilean relativity</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-95"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Noether’s theorem and Galilean relativity ......
+-->
+<h3 id="autosec-95">Chapter&nbsp;<span class="sectionnumber">9&#x2003;</span>Noether’s theorem and Galilean relativity</h3>
+
+<a id="mechanics-autofile-9"></a>
+<!--
+...... section Noether’s first theorem ......
+-->
+<h4 id="autosec-96"><span class="sectionnumber">9.1&#x2003;</span>Noether’s first theorem</h4>
+<a id="mechanics-autopage-96"></a>
+
+
+<a id="sec:noeth-first-theor"></a>
+
+<p>
+A first integral or conserved quantity is a function \(K(q,\dot q,t)\) that is constant on all natural trajectories,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{0}\)</span>
+
+<!--
+
+                                                       dK                    δL
+                                                           |q̄ “ 0,   with        |q̄ “ 0.                                       (9.1)   --><a id="eq:60"></a><!--
+                                                        dt                   δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:60} \frac {dK}{dt}|{\bar q}=0,\quad {\rm with}\ \frac {\delta L}{\delta q^\alpha }|_{\bar q}=0.
+\end{equation}
+
+</p>
+
+<p>
+An infinitesimal symmetry is an infinitesimal virtual variation that leaves the Lagrangian invariant up to a total derivative,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{1}\)</span>
+
+<!--
+
+
+                                                                                       dF pq, 9q, tq
+                                            δQ q α “ Qα pq, 9q, tq such that δQ L “                  .                           (9.2)   --><a id="eq:61"></a><!--
+                                                                                           dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:61} \boxed {\delta _Q q^\alpha =Q^\alpha (q,\dot q,t)\ {\rm such\ that}\ \delta _Q L=\frac {dF(q,\dot q,t)}{dt}}.
+\end{equation}
+
+</p>
+
+<p>
+Noether’s first theorem states that:
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-97"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">10</span></span><span class="amsthmnoteplain"> (Noether’s 1st)</span>. </span>
+Every infinitesimal symmetry gives rise to a conserved quantity.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{2}\)</span>
+
+<!--
+
+                                                     BL           α BL      α BL    dQα BL      dF
+                                     δQ L “ δQ q α        ` δ Q q
+                                                                9        “ Q      `           “    ,                                      (9.3)                                                            --><a id="eq:62"></a><!--
+                                                     Bq α          B q9α     Bq α    dt B q9α   dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:62} \delta _Q L=\delta _Q q^\alpha \frac {\partial L}{\partial q^\alpha }+\delta _Q \dot q^\alpha \frac {\partial L}{\partial \dot q^\alpha }=Q^\alpha \frac
+{\partial L}{\partial q^\alpha }+\frac {dQ^\alpha }{dt}\frac {\partial L}{\partial \dot q^\alpha }=\frac {dF}{dt},
+\end{equation}
+
+</p>
+
+<p>
+where the second equality follows because infinitesimal virtual variations commute with the total derivative, while the last equality follows by the assumption that the variation is a symmetry. Using
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{3}\)</span>
+
+<!--
+
+                                                 dQα BL      d   BL        d BL
+                                                          α
+                                                            “ pQα α q ´ Qα          ,                                                     (9.4)                                                            --><a id="eq:63"></a><!--
+                                                  dt B q9    dt  B q9      dt B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:63} \frac {dQ^\alpha }{dt}\frac {\partial L}{\partial \dot q^\alpha }=\frac {d}{dt}(Q^\alpha \frac {\partial L}{\partial \dot q^\alpha })-Q^\alpha \frac
+{d}{dt}\frac {\partial L}{\partial \dot q^\alpha },
+\end{equation}
+
+</p>
+
+<p>
+the latter combines with the first term to produce the Euler-Lagrange derivatives, while the former combines with the total derivative on the RHS,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{4}\)</span>
+
+<!--
+
+                                                            δL    d    BL
+                                                       Qα      α
+                                                                 “ pF ´ α Qα q.                                                           (9.5)                                                            --><a id="eq:64"></a><!--
+                                                            δq    dt   B q9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:64} Q^\alpha \frac {\delta L}{\delta q^\alpha }=\frac {d}{dt}(F-\frac {\partial L}{\partial \dot q^\alpha }Q^\alpha ).
+\end{equation}
+
+</p>
+
+<p>
+Since the LHS vanishes when evaluated at any natural trajectory, it follows that associated the conserved quantity is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{5}\)</span>
+
+<!--
+
+                                                                                  BL
+                                                      K “ pα Qα ´ F ,      pα “         .                                                 (9.6)                                                            --><a id="eq:65"></a><!--
+                                                                                  B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:65} \boxed {K=p_\alpha Q^\alpha -F},\quad p_\alpha =\frac {\partial L}{\partial \dot q^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+The overall minus sign is conventional and amounts to writing Noether’s first theorem as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{6}\)</span>
+
+<!--
+
+                                                                 δL    d
+                                                            Qα        ` K “ 0.                                                           (9.7)                                                            --><a id="eq:451"></a><!--
+                                                                 δq α  dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:451} Q^\alpha \frac {\delta L}{\delta q^\alpha }+\frac {d}{dt}K=0.
+\end{equation}
+
+</p>
+
+<p>
+Remark: Neither the theorem nor the expression depends on the choice of representative for the action: if \(L&apos;=L+\frac {df(q,t)}{dt}\), it follows that \(\delta _Q\) is also an infinitesimal symmetry of \(L&apos;\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{7}\)</span>
+
+<!--
+
+                                                                  d           d
+                                               δQ L1 “ δQ L `        pδQ f q “ pF ` δQ f q,                                               (9.8)                                                            --><a id="eq:66"></a><!--
+                                                                  dt          dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:66} \delta _Q L&apos;=\delta _Q L+\frac {d}{dt}(\delta _Q f)=\frac {d}{dt}(F+\delta _Q f),
+\end{equation}
+
+</p>
+
+<p>
+with associated conserved quantity
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{8}\)</span>
+
+<!--
+
+
+                                                         Bf       BL   Bf
+                                             K1 “ F `       α
+                                                              Qα ´ p α ` α
+                                                                             qQα “ K.                                                    (9.9)                                                            --><a id="eq:67a"></a><!--
+                                                         Bq
+                                                         
+                                                                   B q
+                                                                      9 Bq
+                                                                        
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:67a} K&apos;=F+\cancel {\frac {\partial f}{\partial q^\alpha }Q^\alpha }-(\frac {\partial L}{\partial \dot q^\alpha }+\cancel {\frac {\partial f}{\partial
+q^\alpha }})Q^\alpha =K.
+\end{equation}
+
+</p>
+<!--
+...... section Applications ......
+-->
+<h4 id="autosec-98"><span class="sectionnumber">9.2&#x2003;</span>Applications</h4>
+<a id="mechanics-autopage-98"></a>
+
+
+<a id="sec:applications"></a>
+<!--
+...... subsection Explicit time independence and conservation of energy ......
+-->
+<h5 id="autosec-99"><span class="sectionnumber">9.2.1&#x2003;</span>Explicit time independence and conservation of energy</h5>
+<a id="mechanics-autopage-99"></a>
+
+
+<a id="sec:expl-time-indep"></a>
+
+<p>
+Consider a Lagrangian that does not depend explicitly on time, \(L=L(q,\dot q)\), \(\frac {\partial L}{\partial t}=0\). It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{9}\)</span>
+
+<!--
+
+                                           dL  BL      BL      δL      d BL
+                                              “ α q9α ` α q:α “ α q9α ` p α q9α q,                                     (9.10)                  --><a id="eq:68"></a><!--
+                                           dt  Bq      B q9    δq      dt B q9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:68} \frac {dL}{dt}=\frac {\partial L}{\partial q^\alpha }\dot q^\alpha +\frac {\partial L}{\partial \dot q^\alpha }\ddot q^\alpha =\frac {\delta L}{\delta
+q^\alpha }\dot q^\alpha +\frac {d}{dt}(\frac {\partial L}{\partial \dot q^\alpha }\dot q^\alpha ),
+\end{equation}
+
+</p>
+
+<p>
+In other words,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{10}\)</span>
+
+<!--
+
+
+                                                            E “ pα q9α ´ L,                                            (9.11)                  --><a id="eq:69"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:69} E=p_\alpha \dot q^\alpha -L,
+\end{equation}
+
+</p>
+
+<p>
+is the conserved quantity associated to the infinitesimal symmetry
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{11}\)</span>
+
+<!--
+
+
+                                                              δQ q α “ q9α .                                           (9.12)                  --><a id="eq:70"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:70} \delta _Q q^\alpha =\dot q^\alpha .
+\end{equation}
+
+</p>
+
+<p>
+In particular, if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{12}\)</span>
+
+<!--
+
+                                                     1
+                                                L“     gαβ pqqq9α q9β ` Aα pqqq9α ´ V pqq,                             (9.13)                  --><a id="eq:71"></a><!--
+                                                     2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:71} L=\frac 12 g_{\alpha \beta }(q)\dot q^\alpha \dot q^\beta +A_\alpha (q) \dot q^\alpha -V(q),
+\end{equation}
+
+</p>
+
+<p>
+the associated conserved quantity
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{13}\)</span>
+
+<!--
+
+                                                         1                         1
+                                E “ gαβ q9α q9β ` A  9α ´ gαβ q9α q9β ´ A
+                                                    q
+                                                  α                      9α ` V “ gαβ q9α q9β ` V.
+                                                                          q
+                                                                        α                                            (9.14)                  --><a id="eq:72"></a><!--
+                                                         2                         2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:72} E=g_{\alpha \beta } \dot q^\alpha \dot q^\beta +\cancel {A_\alpha \dot q^\alpha }-\frac 12 g_{\alpha \beta }\dot q^\alpha \dot q^\beta -\cancel {A_\alpha
+\dot q^\alpha } +V=\frac 12 g_{\alpha \beta }\dot q^\alpha \dot q^\beta +V.
+\end{equation}
+
+</p>
+
+<p>
+corresponds to the mechanical energy.
+</p>
+<!--
+...... subsection Cyclic variables and conservation of canonical momentum ......
+-->
+<h5 id="autosec-100"><span class="sectionnumber">9.2.2&#x2003;</span>Cyclic variables and conservation of canonical momentum</h5>
+<a id="mechanics-autopage-100"></a>
+
+
+<a id="sec:cycl-vari-cons"></a>
+
+<p>
+Suppose that a given variable \(q^\alpha \) is “cyclic” which means that \(L\) does not depend on \(q^\alpha \) but may depend on the associated velocity \(\dot q^\alpha \). To fix ideas, suppose that the last of n variables, \(q^n\) is cyclic,
+\(\frac {\partial L}{\partial q^n}=0\). It follows that \(\delta _Q q^\alpha =\delta ^\alpha _n\) is an infinitesimal symmetry,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{14}\)</span>
+
+<!--
+
+                                                    BL     dpδnα q BL  BL  dp1q BL
+                                       δQ L “ δnα      α
+                                                         `            “ n`           “ 0.                                          (9.15)                                                                       --><a id="eq:73"></a><!--
+                                                    Bq       dt B q9α  Bq   dt B q9n
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:73} \delta _Q L=\delta ^\alpha _n\frac {\partial L}{\partial q^\alpha }+\frac {d(\delta ^\alpha _n)}{dt}\frac {\partial L}{\partial \dot q^\alpha }=\frac
+{\partial L}{\partial q^n}+\frac {d(1)}{dt}\frac {\partial L}{\partial \dot q^n}=0.
+\end{equation}
+
+</p>
+
+<p>
+Since \(F=0\), the associated conserved quantity turns out to be the canonical momentum associated to \(q^n\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{15}\)</span>
+
+<!--
+
+                                                        BL α       BL
+                                                             pδ q “ n “ pn .                                                       (9.16)                                                                       --><a id="eq:74"></a><!--
+                                                        B q9α n    B q9
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:74} \frac {\partial L}{\partial \dot q^\alpha }(\delta ^\alpha _n)=\frac {\partial L}{\partial \dot q^n}=p_n.
+\end{equation}
+
+</p>
+<!--
+...... subsection One-parameter groups of transformations ......
+-->
+<h5 id="autosec-101"><span class="sectionnumber">9.2.3&#x2003;</span>One-parameter groups of transformations</h5>
+<a id="mechanics-autopage-101"></a>
+
+
+<a id="sec:one-parameter-groups"></a>
+
+<p>
+Suppose that the Lagrangian is invariant under a set of invertible transformations \(q^{\prime \alpha }=q^{\prime \alpha }(q^\beta ,t;s)\) that depend continously on a parameters \(s\), and reduce to the identity at \(s=0\),
+\(q^{\prime \alpha }(q^\beta ,t;0)=q^\alpha \). By invariance we mean that the transformed Lagragian in terms of the new variables is equal to the old Lagrangian in terms of the same variables,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{16}\)</span>
+
+<!--
+
+                                                                                d
+                                        L1 pq 1 , q91 , tq “ Lpqpq 1 , t; sq,      qpq 1 , t; sq, tq “ Lpq 1 , q91 , tq,                 (9.17)                                                                           --><a id="eq:75"></a><!--
+                                                                                dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:75} L&apos;(q&apos;,\dot q&apos;,t)=L(q(q&apos;,t;s),\frac {d}{dt} q(q&apos;,t;s),t)=L(q&apos;,\dot q&apos;,t),
+\end{equation}
+
+</p>
+
+<p>
+where the first equality merely expresses how the new Lagrangian in terms of the new coordinates is obtained in terms of the old one, while the second equality expresses the invariance of the Lagrangian. When using the inverse transformation, the latter
+is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{17}\)</span>
+
+<!--
+
+                                                                                          d 1
+                                                  Lpq, 9q, tq “ Lpq 1 pq, t; sq,             q pq, t; sq, tq.                            (9.18)                                                                           --><a id="eq:76"></a><!--
+                                                                                          dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:76} L(q,\dot q,t)= L(q&apos;(q,t;s),\frac {d}{dt}q&apos;(q,t;s),t).
+\end{equation}
+
+</p>
+
+<p>
+In this case, the transformation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{18}\)</span>
+
+<!--
+
+
+                                                                                          Bq 1α
+                                                         δR q α “ Rα pq, tq :“                  |s“0 ,                                   (9.19)                                                                           --><a id="eq:77"></a><!--
+                                                                                           Bs
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:77} \boxed {\delta _R q^\alpha =R^\alpha (q,t):=\frac {\partial q&apos;^{\alpha }}{\partial s} |_{s=0}},
+\end{equation}
+
+</p>
+
+<p>
+defines an infinitesimal symmetry.
+</p>
+
+<p>
+Indeed, \(q^{\prime \alpha }=q^\alpha +sR^\alpha (q,t)+O(s^2)\), while \(\frac {dq^{\prime \alpha }}{dt} =\dot q^\alpha +s\frac {dR^\alpha }{dt}+O(s^2)\). If \(\delta _R \dot
+q^\alpha =\frac {\partial }{\partial s} \frac {dq^{\prime \alpha }}{dt}|_{s=0}\), it follows that \(\delta _R \dot q^\alpha =\frac {dR^\alpha }{dt}\), as it should for an infinitesimal virtual
+variation. In these terms, the invariance condition <span class="textup">(<a href="node-9.html#eq:76">9.18</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{19}\)</span>
+
+<!--
+
+                                                                                             dR
+                                      Lpq, 9q, tq “ Lpq ` sR ` Ops2 q, q9 ` s                   ` Ops2 q, tq,         @s.                (9.20)                                                                           --><a id="eq:78"></a><!--
+                                                                                             dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:78} L(q,\dot q,t)=L(q+sR+O(s^2),\dot q+s\frac {dR}{dt}+O(s^2),t),\quad \forall s.
+\end{equation}
+
+</p>
+
+<p>
+In particular, for \(s=0\), this is an identity, while the terms linear in s on the RHS have to vanish. The latter can be obtained by taking \(\frac {\partial }{\partial s}\) at \(s=0\), and yield
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{20}\)</span>
+
+<!--
+
+                                                                  BL     dRα BL
+                                                             Rα      α
+                                                                       `           “ 0,                                                  (9.21)                                                                           --><a id="eq:79"></a><!--
+                                                                  Bq      dt B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:79} R^\alpha \frac {\partial L}{\partial q^\alpha }+\frac {dR^\alpha }{dt}\frac {\partial L}{\partial \dot q^\alpha }=0,
+\end{equation}
+
+</p>
+
+<p>
+which can also be written as \(\delta _R L=0\). According to Noether’s theorem, the associated conserved quantity is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{21}\)</span>
+
+<!--
+
+
+                                                                     K “ pα δ R q α .                                                    (9.22)                                                                           --><a id="eq:80"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:80} \boxed {K=p_\alpha \delta _Rq^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+Note that a cyclic variabe can be interpreted as a particular case. Indeed, the transformation that leaves the Lagrangian invariant is given by \(q^{\prime \alpha }=q^\alpha +s\delta ^\alpha _1\).
+</p>
+
+<p>
+Another particular case is a system of particles in three-dimensional Euclidean space, with a Lagrangian of the type
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{22}\)</span>
+
+<!--
+
+                                                                        N
+                                                                    1ÿ
+                                        L “ T ´ V,           T “         m x9 α x9     ,                 V “ V prij q.                   (9.23)                                                                           --><a id="eq:81"></a><!--
+                                                                    2 i“1 piq piq αpiq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:81} L=T-V,\quad T=\frac 12 \sum _{i=1}^{\mathcal N}m_{(i)}\dot x^\alpha _{(i)}\dot x_{\alpha (i)},\quad V=V(r_{ij}).
+\end{equation}
+
+</p>
+
+<p>
+In this expression, the summation in the kinetic term over the different particles has been written out explicitly, while the summation over the \(3\) components of the position of a single particle is implicit through the summation convention. Note also
+that we have defined \(x_{\alpha (i)}=\delta _{\alpha \beta }x^\beta _{(i)}\), and that the potential \(V(r_{ij})\) with \(i&lt;j\) is assumed to depend only on the relative distances between the different particles,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{23}\)</span>
+
+<!--
+
+                                                             b
+                                                     rij “    pxα      α
+                                                                piq ´ xpjq qpxαpiq ´ xαpjq q.                                            (9.24)                                                                           --><a id="eq:82"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+r_{ij}=\sqrt {(x^\alpha _{(i)}-x^{\alpha }_{(j)}) (x_{\alpha (i)}-x_{\alpha (j)})}\label {eq:82}.
+\end{equation}
+
+</p>
+
+<p>
+If one now considers translations in Euclidean space,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{24}\)</span>
+
+<!--
+
+                                                                          α    α
+                                                                    x1α
+                                                                     i “ xi ` a ,                                                        (9.25)                                                                           --><a id="eq:83"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:83} \boxed {x^{\prime \alpha }_i=x^\alpha _i+a^\alpha },
+\end{equation}
+
+</p>
+
+<p>
+for constant \(a^\alpha \) (which correspond to three different parameters \(s\)), invariance of the Lagrangrian in the form <span class="textup">(<a href="node-9.html#eq:76">9.18</a>)</span> is manifest since \(\frac
+{dx^{\prime \alpha }_i}{dt}=\frac {dx^\alpha _i}{dt}\) and \(r&apos;_{ij}=r_{ij}\). The associated infinitesimal transformations are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{25}\)</span>
+
+<!--
+
+
+                                                               α         Bx1α
+                                                                           i
+                                                              Rγi “           |a“0 “ δγα ,                                               (9.26)                                                                           --><a id="eq:84"></a><!--
+                                                                         Baγ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:84} R^\alpha _{\gamma i}=\frac {\partial x^{\prime \alpha }_i}{\partial a^\gamma }|_{a=0}=\delta ^\alpha _\gamma ,
+\end{equation}
+
+</p>
+
+<p>
+with associated conserved quantities given by the components of total linear momenta,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{26}\)</span>
+
+<!--
+
+                                                                  ÿ BL       ÿ
+                                                         Pγ “            γ “   mpiq x9 γpiq .                                            (9.27)                                                                           --><a id="eq:85"></a><!--
+                                                                  i
+                                                                    B x9 piq i
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:85} \boxed {P_\gamma =\sum _{i}\frac {\partial L}{\partial \dot x^\gamma _{(i)}}=\sum _{i}m_{(i)}\dot x_{\gamma (i)}}.
+\end{equation}
+
+</p>
+
+<p>
+For rotations, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{27}\)</span>
+
+<!--
+
+
+                                               α   β
+                                         x1α
+                                          i “ A β xi ,            Aα β δαγ Aγ δ “ δβδ ðñ AT A “ 1,                                       (9.28)                                                                           --><a id="eq:86"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:86} \boxed {x^{\prime \alpha }_i={A^\alpha }_\beta x^\beta _i},\quad {A^\alpha }_\beta \delta _{\alpha \gamma } {A^\gamma }_\delta =\delta _{\beta \delta }
+\iff A^T A=\mathbb {1},
+\end{equation}
+
+</p>
+
+<p>
+with \(A\) a constant \(3\times 3\) orthogonal matrix. Again, the invariance of the Lagrangian is manifest since orthogonality implies that \(\frac {dx^{\prime \alpha }_{(i)}}{dt}\delta _{\alpha \gamma } \frac
+{dx^{\prime \gamma }_{(i)}}{dt}=\frac {dx^{\alpha }_{(i)}}{dt}\delta _{\alpha \gamma } \frac {dx^{\gamma }_{(i)}}{dt}\) while distances are also left invariant. In order to find the parameters, we
+note that if \({A^\alpha }_\beta =\delta ^\alpha _\beta +{\omega ^\alpha }_\beta +O(\omega ^2)\), with \({\omega ^\alpha }_\beta \) a “small” matrix, the orthogonality condition
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{28}\)</span>
+
+<!--
+
+
+                                          pδβα ` ω α β ` Opω 2 qqδαγ pδδγ ` ω γ δ ` Opω 2 qq “ δβδ ,                                     (9.29)                                                                           --><a id="eq:87"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:87} (\delta ^\alpha _\beta +{\omega ^\alpha }_\beta +O(\omega ^2))\delta _{\alpha \gamma } (\delta ^\gamma _\delta +{\omega ^\gamma }_\delta +O(\omega
+^2))=\delta _{\beta \delta },
+\end{equation}
+
+</p>
+
+<p>
+implies to first order in \(\omega \) that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{29}\)</span>
+
+<!--
+
+
+                                                      ωδβ ` ωβδ “ 0 ðñ ω ` ω T “ 0.                                                      (9.30)                                                                           --><a id="eq:88"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:88} \omega _{\delta \beta }+\omega _{\beta \delta }=0\iff \omega +\omega ^T=0.
+\end{equation}
+
+</p>
+
+<p>
+This implies that \(\omega \) can be written in terms of three independent rotation parameters \(\theta ^\gamma \) as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{30}\)</span>
+
+<!--
+
+                                                                                      ¨                        ˛
+                                                                       0                         ´θ3       θ2
+                                             ω α β “ θγ ϵα γβ ðñ ω “ ˝ θ3                         0        ´θ1 ‚,                        (9.31)                                                                           --><a id="eq:89"></a><!--
+                                                                      ´θ2                        θ1         0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:89} {\omega ^\alpha }_\beta =\theta ^\gamma {\epsilon ^\alpha }_{\gamma \beta }\iff \omega =\begin{pmatrix} 0 &amp;-\theta ^3&amp; \theta ^2 \\ \theta ^3
+&amp; 0 &amp; -\theta ^1 \\ -\theta ^2 &amp; \theta ^1 &amp; 0 \end {pmatrix},
+\end{equation}
+
+</p>
+
+<p>
+and that the associated infinitesimal transformations are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{31}\)</span>
+
+<!--
+
+                                                                     Bx1α
+                                                            α
+                                                           Rγi “       i
+                                                                          |θ“0 “ ϵα γβ xβi ,                                             (9.32)                                                                           --><a id="eq:90"></a><!--
+                                                                     Bθγ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:90} R^{\alpha }_{\gamma i}=\frac {\partial x^{\prime \alpha }_i}{\partial \theta ^\gamma }|_{\theta =0} ={\epsilon ^\alpha }_{\gamma \beta }x^{\beta }_i,
+\end{equation}
+
+</p>
+
+<p>
+with associated conserved quantities given by the components of the total angular momentum,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{32}\)</span>
+
+<!--
+
+                                                                            ÿ
+                                                            Jγ “ ϵγαβ               xα        9 βpiq .
+                                                                                     piq mpiq x                                          (9.33)                                                                           --><a id="eq:91"></a><!--
+                                                                                i
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:91} \boxed {J_\gamma =\epsilon _{\gamma \alpha \beta }\sum _i x^\alpha _{(i)} m_{(i)}\dot x^\beta _{(i)} }.
+\end{equation}
+
+</p>
+
+<p>
+We will show below that a rotation matrix that is connected to the identity<sup>1</sup> can be written as a rotation of an angle \(0\leq \theta &lt;2\pi \) around a fixed axis. The rotation may be determined a vector
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{33}\)</span>
+
+<!--
+
+
+                                                                  θ⃗ “ θ⃗n “ θα⃗eα ,                                                     (9.34)                                                                           --><a id="eq:92"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:92} \vec \theta =\theta \vec n=\theta ^\alpha \vec e_\alpha ,\quad
+\end{equation}
+
+</p>
+
+<p>
+with \(\vec e_1=\vec 1_x\), \(\vec e_2=\vec 1_y\), \(\vec e_3=\vec 1_z\), of norm
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{34}\)</span>
+
+<!--
+
+                                                              a
+                                                        θ“     pθ1 q2 ` pθ2 q2 ` pθ3 q3 ,                                             (9.35)                                                                           --><a id="eq:norm"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:norm} \theta =\sqrt {(\theta ^1)^2+(\theta ^2)^2+(\theta ^3)^3},
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{35}\)</span>
+
+<!--
+
+                                                                     1 ´ cos θ α      sin θ α
+                                          Aα β “ cos θδβα ` p             2
+                                                                              qθ θβ ´      ϵ βγ θγ .                                    (9.36)                                                                           --><a id="eq:93b"></a><!--
+                                                                        θ               θ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:93b} {A^\alpha }_\beta =\cos \theta \delta ^\alpha _\beta +(\frac {1-\cos \theta }{\theta ^2})\theta ^\alpha \theta _\beta -\frac {\sin \theta }{\theta
+}{\epsilon ^\alpha }_{\beta \gamma }\theta ^\gamma .
+\end{equation}
+
+</p>
+
+<p>
+As before, one then finds that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{36}\)</span>
+
+<!--
+
+                                                                  BAα β
+                                                                        |θ“0 “ ϵα γβ .                                                   (9.37)                                                                           --><a id="eq:94"></a><!--
+                                                                   Bθγ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:94} \frac {\partial {A^\alpha }_\beta }{\partial \theta ^\gamma }|_{\theta =0}={\epsilon ^\alpha }_{\gamma \beta }.
+\end{equation}
+
+</p>
+<div role="note" class="footnotes">
+
+<a id="mechanics-autopage-102"></a>
+<p>
+<sup>1</sup>&nbsp;This means that one can assume that, if the different parameters are set to zero, the matrix that determines the rotation can be taken to be the unit matrix.
+</p>
+
+
+</div>
+<!--
+...... subsection Parametrization of a rotation ......
+-->
+<h5 id="autosec-103"><span class="sectionnumber">9.2.4&#x2003;</span>Parametrization of a rotation</h5>
+<a id="mechanics-autopage-103"></a>
+
+
+<a id="sec:param-rotat-"></a>
+
+<p>
+Consider a rotation matrix \(A\) in 3 dimensions with entries \({A^\alpha }_\beta \), \(\alpha ,\beta =1,2,3\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{37}\)</span>
+
+<!--
+
+
+                                            AT A “ 1 ðñ Aαβ Aα γ “ δβγ ,                                               (9.38)                                                                --><a id="eq:255"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:255} A^TA=\mathbb 1\iff A_{\alpha \beta }{A^\alpha }_\gamma =\delta _{\beta \gamma },
+\end{equation}
+
+</p>
+
+<p>
+where the Kronecker symbols \(\delta _{\alpha \beta },\delta ^{\alpha \beta }\) are used to lower and raise indices. By taking the determinant, it follows that \({\rm det}A=\pm 1\). In the following, we will concentrate on
+rotation matrices with unit determminant,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{38}\)</span>
+
+<!--
+
+
+                                                      detA “ 1.                                                        (9.39)                                                                --><a id="eq:256"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:256} {\rm det}A=1.
+\end{equation}
+
+</p>
+<!--
+...... subsubsection Invariant line ......
+-->
+<h6 id="autosec-104">Invariant line</h6>
+<a id="mechanics-autopage-104"></a>
+
+
+<a id="sec:invariant-line"></a>
+
+<p>
+For such a matrix, the rotation, i.e., the transformation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{39}\)</span>
+
+<!--
+
+
+                                                              x1α “ Aα β xβ ,                                          (9.40)                                                                --><a id="eq:257"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:257} x^{\prime \alpha }={A^\alpha }_\beta x^\beta ,
+\end{equation}
+
+</p>
+
+<p>
+leaves a line invariant.
+</p>
+
+<p>
+Indeed, such a line is defined by a non trivial solution to the equation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{40}\)</span>
+
+<!--
+
+
+                                                   xα “ Aα β xβ ðñ pA ´ 1q⃗x “ 0.                                      (9.41)                                                                --><a id="eq:258"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:258} x^\alpha ={A^\alpha }_\beta x^\beta \iff (A-\mathbb 1)\vec x=0.
+\end{equation}
+
+</p>
+
+<p>
+The existence of a non-trivial solution \(\vec x\neq \vec 0\) requires that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{41}\)</span>
+
+<!--
+
+
+                                                              detpA ´ 1q “ 0.                                          (9.42)                                                                --><a id="eq:259"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:259} {\rm det}(A-\mathbb 1)=0.
+\end{equation}
+
+</p>
+
+<p>
+Let us suppose that \({\rm det}(A-\mathbb 1)=k\). From the defining equation of a rotation matrix, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{42}\)</span>
+
+<!--
+
+
+                                           AT pA ´ 1q “ 1 ´ AT “ p1 ´ AqT “ ´pA ´ 1qT .                                (9.43)                                                                --><a id="eq:260"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:260} A^T(A-\mathbb 1)=\mathbb 1-A^T=(\mathbb 1-A)^T=-(A-\mathbb 1)^T.
+\end{equation}
+
+</p>
+
+<p>
+By taking the determinant of this equation, it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{43}\)</span>
+
+<!--
+
+
+                                                  1k “ p´1q3 k ùñ k “ ´k ùñ k “ 0.                                     (9.44)                                                                --><a id="eq:261"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:261} 1k=(-1)^3k\Longrightarrow k=-k\Longrightarrow k=0.
+\end{equation}
+
+</p>
+
+<p>
+Let us denote by \(\vec \theta \) a non trivial solution to \(A\vec \theta =\vec \theta \). In other words, the line which is left invariant by the rotation is \(\lambda \vec \theta \), \(\lambda \in \mathbb R\). Furthermore
+\(\vec \theta =\theta \vec n\), \(\theta =\sqrt {(\theta ^1)^2+(\theta ^2)^2+(\theta ^3)^2}\) is the norm of \(\vec \theta \), while \(\vec n=\frac {1}{\theta }\theta ^\alpha \vec
+e_\alpha \), with components \(\hat \theta ^\alpha =\frac {\theta ^\alpha }{\theta }\) is the unit vector along the axis of rotation, while \(\vec e_\alpha \) are the unit vectors along the coordinate axis of \(\mathbb
+R^3\).
+</p>
+<!--
+...... subsubsection Geometry of a rotation in 3 dimensions ......
+-->
+<h6 id="autosec-105">Geometry of a rotation in 3 dimensions</h6>
+<a id="mechanics-autopage-105"></a>
+
+
+<a id="sec:orth-frame-involv"></a>
+
+<p>
+If \(\overrightarrow {OP}=x^\alpha \vec e_\alpha =\vec x\) denotes the vector relating the origin \(O\) with coordinates \(x^\alpha =0\) to an arbitrary point \(P\) with coordinates \(x^\alpha \), the image of this vector under
+the rotation <span class="textup">(<a href="node-9.html#eq:257">9.40</a>)</span> is the vector \(\overrightarrow {OP&apos;}=x^{\prime \alpha } \vec e_\alpha =\vec x&apos;\), where the
+coordinates of \(P&apos;\) are \(x^{\prime \alpha }\). Furthermore, by suitably choosing the orientation of \(\vec n\), one may arrange that \((\vec n,\overrightarrow {OP},\overrightarrow {OP&apos;})\) is oriented
+positively.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-107"></a>
+
+<p>
+
+<a href="3drotation.png" target="_blank" ><img
+   src="3drotation.png"
+   style="
+   width:182pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-14" ></a >
+Figure&nbsp;9.1: Geometry of a rotation
+</div>
+</div>
+
+</div>
+
+<p>
+A rotation preserves the scalar products and thus the norms of vectors,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{44}\)</span>
+
+<!--
+
+
+                                         ⃗u1 ¨ ⃗v 1 “ u1α v 1α “ Aαβ uβ Aα γ v γ “ uβ δβγ v γ “ uβ v β .                         (9.45)                                                                       --><a id="eq:262"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:262} \vec u&apos;\cdot \vec v&apos;=u&apos;_\alpha v&apos;^\alpha =A_{\alpha \beta }u^\beta {A^\alpha }_\gamma v^\gamma =u^\beta \delta _{\beta \gamma
+}v^\gamma =u_\beta v^\beta .
+\end{equation}
+
+</p>
+
+<p>
+Let us define the point \(Q\) to be the orthogonal projection of \(P\) on the line defined by \(\vec n\), \(\overrightarrow {OQ}=(\overrightarrow {OP}\cdot \vec n)\vec n\), and show that \(Q,P,P&apos;\) lie in the plane
+perpendicular to \(\vec n\). Writing \(\overrightarrow {OP}=\overrightarrow {OQ}+\overrightarrow {QP}\), it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{45}\)</span>
+
+<!--
+
+                                      ÝÝÑ        ÝÝÑ ÝÝÑ         ÝÝÑ        ÝÝÑ
+                                      QP ¨ ⃗n “ pOP ´ OQq ¨ ⃗n “ OP ¨ ⃗n ´ pOP ¨ ⃗nq⃗n ¨ ⃗n “ 0                                  (9.46)                                                                       --><a id="eq:263"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\overrightarrow {QP}\cdot \vec n=(\overrightarrow {OP}-\overrightarrow {OQ})\cdot \vec n=\overrightarrow {OP}\cdot \vec n-(\overrightarrow {OP}\cdot \vec n)\vec n\cdot
+\vec n=0\label {eq:263}
+\end{equation}
+
+</p>
+
+<p>
+Furthermore,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{46}\)</span>
+
+<!--
+
+                         ÝÝÑ1      ÝÝÑ         ÝÝÑ         ÝÝÑ            ÝÝÑ       ÝÝÑ       ÝÝÑ
+                         QP ¨ ⃗n “ OP 1 ¨ ⃗n ´ OQ ¨ ⃗n “ ApOP q ¨ Ap⃗nq ´ OQ ¨ ⃗n “ OP ¨ ⃗n ´ OQ ¨ ⃗n “ 0.                       (9.47)                                                                       --><a id="eq:264"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\overrightarrow {QP&apos;}\cdot \vec n=\overrightarrow {OP&apos;}\cdot \vec n-\overrightarrow {OQ}\cdot \vec n=A(\overrightarrow {OP})\cdot A(\vec n)-\overrightarrow
+{OQ}\cdot \vec n=\overrightarrow {OP}\cdot \vec n-\overrightarrow {OQ}\cdot \vec n=0\label {eq:264}.
+\end{equation}
+
+</p>
+
+<p>
+Furthermore
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{47}\)</span>
+
+<!--
+
+                                                                ÝÝÑ       ÝÝÑ
+                                                              ||QP || “ ||QP 1 ||.                                               (9.48)                                                                       --><a id="eq:268"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+||\overrightarrow {QP}||=||\overrightarrow {QP&apos;}||.\label {eq:268}
+\end{equation}
+
+</p>
+
+<p>
+Indeed, starting from \(||\overrightarrow {OP}||^2=||\overrightarrow {OP&apos;}||^2\), by using that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{48}\)</span>
+
+<!--
+
+
+                                                     ||⃗a ` ⃗b||2 “ a2 ` b2 ` 2ab cos ϕ,                                         (9.49)                                                                       --><a id="eq:277"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+||\vec a+\vec b||^2=a^2+b^2+2 ab\cos \phi ,\label {eq:277}
+\end{equation}
+
+</p>
+
+<p>
+with \(a,b\) the norms of \(\vec a,\vec b\) and \(\phi \) the angle between them, one develops the left hand side as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{49}\)</span>
+
+<!--
+
+                                      ÝÝÑ        ÝÝÑ ÝÝÑ         ÝÝÑ       ÝÝÑ       ÝÝÑÝÝÑ
+                                    ||OP ||2 “ ||OQ ` QP ||2 “ ||OQ||2 ` ||QP ||2 ` 
+                                                                                          
+                                                                                    2OQ
+                                                                                       ¨ QP .                                   (9.50)                                                                       --><a id="eq:267"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:267} ||\overrightarrow {OP}||^2=||\overrightarrow {OQ}+\overrightarrow {QP}||^2= ||\overrightarrow {OQ}||^2+||\overrightarrow {QP}||^2+\cancel {
+2\overrightarrow {OQ}\cdot \overrightarrow {QP}}.
+\end{equation}
+
+</p>
+
+<p>
+The last term vanishes since both vectors are orthogonal. The result follows by applying the same reasoning to the right hand side, that is to say decomposing \(\overrightarrow {OP&apos;}=\overrightarrow
+{OQ}+\overrightarrow {QP&apos;}\), and after having computed the norm, cancelling the common term \(||\overrightarrow {OQ}||^2\) on both sides of the equation.
+</p>
+
+<p>
+The triangle \(QPP&apos;\) thus has two sides of equal length, \(QP\) and \(QP&apos;\) so that, if \(M\) is the point in the middle of \(PP&apos;\), \(QM\) bisects the angle at \(Q\) and \(\overrightarrow {QM}\) is orthogonal to
+\(\overrightarrow {PP&apos;}\). In the plane orthogonal to the axis of rotation, the angle at \(Q\), which will be called \(\theta \), is the angle of rotation that brings you from \(P\) to \(P&apos;\).
+</p>
+
+<p>
+By using that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{50}\)</span>
+
+<!--
+
+
+                                                             ⃗a ˆ ⃗b “ ab sin ϕ ⃗n,                                              (9.51)                                                                       --><a id="eq:278"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\vec a\times \vec b=ab\sin \phi \ \vec n,\label {eq:278}
+\end{equation}
+
+</p>
+
+<p>
+where \(\vec n\) is the normal to the plane formed by \(\vec a,\vec b\), it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{51}\)</span>
+
+<!--
+
+                                                        ÝÝÑ ÝÝÑ1
+                                                        QM ˆ P P “ QM P P 1 ⃗n,                                                  (9.52)                                                                       --><a id="eq:269"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:269} \overrightarrow {QM}\times \overrightarrow {PP&apos;}=QM\, PP&apos;\ \vec n,
+\end{equation}
+
+</p>
+
+<p>
+since the angle bewteen the two vectors is \(\frac {\pi }{2}\) radians. Furthermore,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{52}\)</span>
+
+<!--
+
+                                                        θ             PP1                   θ
+                                           QM “ QP 1 cos ,                “ M P 1 “ QP 1 sin .                                   (9.53)                                                                       --><a id="eq:270"></a><!--
+                                                        2              2                    2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:270} QM=QP&apos;\cos \frac {\theta }{2},\quad \frac {PP&apos;}{2}=MP&apos;=QP&apos;\sin \frac {\theta }{2}.
+\end{equation}
+
+</p>
+
+<p>
+Taking the quotient of these two equations yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{53}\)</span>
+
+<!--
+
+                                                                      θ   PP1
+                                                              2 tan     “     .                                                  (9.54)                                                                       --><a id="eq:271"></a><!--
+                                                                      2   QM
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:271} 2\tan {\frac {\theta }{2}}=\frac {PP&apos;}{QM}.
+\end{equation}
+
+</p>
+
+<p>
+Since \((\vec n,\overrightarrow {OP},\overrightarrow {OP&apos;})\) is positively oriented, it follows for the unit vectors that \(\vec n\times \overrightarrow {1_{QM}}= \overrightarrow
+{1_{PP&apos;}}\). Multiplying by the previous equation yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{54}\)</span>
+
+<!--
+
+                                                                            1
+                                                             θ      ÝÝÑ P P ÝÝÑ1
+                                                     2 tan     ⃗n ˆ 1QM “     1P P .                                             (9.55)                                                                       --><a id="eq:272"></a><!--
+                                                             2            QM
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:272} 2\tan {\frac {\theta }{2}}\ \vec n\times \overrightarrow {1_{QM}}=\frac {PP&apos;}{QM}\ \overrightarrow {1_{PP&apos;}}.
+\end{equation}
+
+</p>
+
+<p>
+Defining
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{55}\)</span>
+
+<!--
+
+                                                        Ñ
+                                                        Ý      θ                  θ
+                                                        Ω “ tan ⃗n,        Ω “ tan ,                                             (9.56)                                                                       --><a id="eq:273"></a><!--
+                                                               2                  2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:273} \overrightarrow {\Omega }=\tan {\frac {\theta }{2}}\vec n,\quad \Omega =\tan \frac {\theta }{2},
+\end{equation}
+
+</p>
+
+<p>
+one may rewrite the former equation as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{56}\)</span>
+
+<!--
+
+                                                              Ñ ÝÝÑ ÝÝÑ
+                                                              Ý
+                                                             2 Ω ˆ QM “ P P 1 .                                                  (9.57)                                                                       --><a id="eq:274"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:274} 2 \overrightarrow {\Omega }\times \overrightarrow {QM}=\overrightarrow {PP&apos;}.
+\end{equation}
+
+</p>
+<!--
+...... subsubsection Analytic expression of the rotation matrix ......
+-->
+<h6 id="autosec-108">Analytic expression of the rotation matrix</h6>
+<a id="mechanics-autopage-108"></a>
+
+
+<a id="sec:analyt-expr-rotat"></a>
+
+<p>
+We want an expression of \(\overrightarrow {OP&apos;}\) in terms of \(\overrightarrow {OP}\).
+</p>
+
+<p>
+By using that \(\overrightarrow {QM}=\frac 12 ( \overrightarrow {QP}+ \overrightarrow {QP&apos;})\), it follows from the previous equation that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{57}\)</span>
+
+<!--
+
+                                        ÝÝÑ1 ÝÑ    ÝÝÑ ÝÝÑ       Ñ
+                                                                 Ý    ÝÝÑ ÝÝÑ      ÝÝ
+                                                                                    Ñ
+                                        P P “ Ω ˆ pQP ` QP 1 q “ Ω ˆ pOP ` OP 1 ´ 2
+                                                                                  OQq,
+                                                                                                                                      (9.58)                --><a id="eq:276"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:276} \overrightarrow {PP&apos;}=\overrightarrow {\Omega }\times (\overrightarrow {QP}+ \overrightarrow {QP&apos;})=\overrightarrow {\Omega }\times
+(\overrightarrow {OP}+ \overrightarrow {OP&apos;}-\cancel {2\overrightarrow {OQ}}),
+\end{equation}
+
+</p>
+
+<p>
+where the last term does not contibute since it is parallel to \(\overrightarrow {\Omega }\). When using that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{58}\)</span>
+
+<!--
+
+
+                                                     ⃗a ˆ p⃗b ˆ ⃗cq “ p⃗a ¨ ⃗cq⃗b ´ p⃗a ¨ ⃗bq⃗c,                                        (9.59)                --><a id="eq:279"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:279} \vec a\times (\vec b\times \vec c)=(\vec a\cdot \vec c) \vec b-(\vec a\cdot \vec b) \vec c,
+\end{equation}
+
+</p>
+
+<p>
+it follows by applying \(\vec \Omega \times \) to <span class="textup">(<a href="node-9.html#eq:276">9.58</a>)</span> that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{59}\)</span>
+
+<!--
+
+                                      Ñ ÝÝÑ1
+                                      Ý          Ñ ÝÝÑ ÝÝÑ Ý
+                                                 Ý                 Ñ     Ñ Ý
+                                                                         Ý    Ñ ÝÝÑ ÝÝÑ
+                                      Ω ˆ P P “ p Ω ¨ pOP ` OP 1 qq Ω ´ p Ω ¨ Ω qpOP ` OP 1 q.                                          (9.60)                --><a id="eq:280"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:280} \overrightarrow {\Omega }\times \overrightarrow {PP&apos;}=(\overrightarrow {\Omega }\cdot (\overrightarrow {OP}+ \overrightarrow
+{OP&apos;}))\overrightarrow {\Omega }-(\overrightarrow {\Omega }\cdot \overrightarrow {\Omega })(\overrightarrow {OP}+ \overrightarrow {OP&apos;}).
+\end{equation}
+
+</p>
+
+<p>
+When using on the left hand side that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{60}\)</span>
+
+<!--
+
+                                                    ÝÝÑ1 ÝÝÑ1 ÝÝÑ ÝÝÑ1 ÝÝÑ
+                                                    P P “ QP ´ QP “ OP ´ OP ,                                                           (9.61)                --><a id="eq:275"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\overrightarrow {PP&apos;}=\overrightarrow {QP&apos;}-\overrightarrow {QP}= \overrightarrow {OP&apos;}-\overrightarrow {OP},\label {eq:275}
+\end{equation}
+
+</p>
+
+<p>
+and on the right hand side that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{61}\)</span>
+
+<!--
+
+                                                      Ñ ÝÝÑ Ý
+                                                      Ý        Ñ ÝÝÑ Ý  Ñ ÝÝÑ
+                                                      Ω ¨ OP “ Ω ¨ OQ “ Ω ¨ OP 1                                                        (9.62)                --><a id="eq:281"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\overrightarrow {\Omega }\cdot \overrightarrow {OP}= \overrightarrow {\Omega }\cdot \overrightarrow {OQ}=\overrightarrow {\Omega }\cdot \overrightarrow {OP&apos;}\label
+{eq:281}
+\end{equation}
+
+</p>
+
+<p>
+equation <span class="textup">(<a href="node-9.html#eq:280">9.60</a>)</span> becomes
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{62}\)</span>
+
+<!--
+
+                                       Ñ ÝÝÑ1 Ý
+                                       Ý        Ñ ÝÝÑ      Ñ ÝÝÑ Ý
+                                                           Ý        Ñ        ÝÝÑ ÝÝÑ
+                                       Ω ˆ OP ´ Ω ˆ OP “ 2p Ω ¨ OP q Ω ´ Ω2 pOP ` OP 1 q.                                               (9.63)                --><a id="eq:282"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:282} \overrightarrow {\Omega }\times \overrightarrow {OP&apos;}-\overrightarrow {\Omega }\times \overrightarrow {OP}=2(\overrightarrow {\Omega }\cdot
+\overrightarrow {OP})\overrightarrow {\Omega }-\Omega ^2 (\overrightarrow {OP}+ \overrightarrow {OP&apos;}).
+\end{equation}
+
+</p>
+
+<p>
+Using <span class="textup">(<a href="node-9.html#eq:275">9.61</a>)</span> in the left hand side of <span class="textup">(<a href="node-9.html#eq:276">9.58</a>)</span> and <span
+class="textup">(<a href="node-9.html#eq:282">9.63</a>)</span> in the right hand side yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{63}\)</span>
+
+<!--
+
+                                     ÝÝÑ1 ÝÝÑ   Ñ ÝÝÑ
+                                                Ý           Ñ ÝÝÑ Ý
+                                                            Ý        Ñ        ÝÝÑ ÝÝÑ
+                                     OP ´ OP “ 2 Ω ˆ OP ` 2p Ω ¨ OP q Ω ´ Ω2 pOP ` OP 1 q,                                              (9.64)                --><a id="eq:283"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:283} \overrightarrow {OP&apos;}-\overrightarrow {OP}=2 \overrightarrow {\Omega }\times \overrightarrow {OP}+2(\overrightarrow {\Omega }\cdot \overrightarrow
+{OP})\overrightarrow {\Omega }-\Omega ^2 (\overrightarrow {OP}+ \overrightarrow {OP&apos;}),
+\end{equation}
+
+</p>
+
+<p>
+or equivalently
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{64}\)</span>
+
+<!--
+
+                                     ÝÝÑ1        1 ”        2 ÝÝÑ    Ñ ÝÝÑ
+                                                                      Ý          Ñ ÝÝÑ Ý
+                                                                                  Ý       Ñ
+                                                                                             ı
+                                     OP “            p1 ´ Ω  q OP ` 2 Ω ˆ OP ` 2p Ω ¨ OP q Ω  .                                         (9.65)                --><a id="eq:284"></a><!--
+                                              1 ` Ω2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:284} \overrightarrow {OP&apos;}=\frac {1}{1+\Omega ^2}\Big [(1-\Omega ^2)\overrightarrow {OP}+2 \overrightarrow {\Omega }\times \overrightarrow
+{OP}+2(\overrightarrow {\Omega }\cdot \overrightarrow {OP})\overrightarrow {\Omega } \Big ].
+\end{equation}
+
+</p>
+
+<p>
+The trigonometric relations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{65}\)</span>
+
+<!--
+
+                                                                 cos2 θ2 ´sin2 θ2
+                                   1 ´ Ω2   1 ´ tan2 θ2       cos2 θ2           θ      θ
+                                          “        2 θ
+                                                        “      θ      2 θ
+                                                                          “ cos2 ´ sin2 “ cos θ,                                        (9.66)                --><a id="eq:285"></a><!--
+                                   1 ` Ω2   1 ` tan 2     cos2
+                                                               2 `sin   2       2      2
+                                                                     cos2 θ2
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:285} \frac {1-\Omega ^2}{1+\Omega ^2}=\frac {1-\tan ^2\frac {\theta }{2}}{1+\tan ^2\frac {\theta }{2}} =\frac {\frac {\cos ^2\frac {\theta }{2}-\sin ^2\frac
+{\theta }{2}}{\cos ^2\frac {\theta }{2}}}{ \frac {\cos ^2\frac {\theta }{2}+\sin ^2\frac {\theta }{2}}{\cos ^2\frac {\theta }{2}}}= \cos ^2\frac {\theta }{2}-\sin
+^2\frac {\theta }{2}=\cos \theta ,
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{66}\)</span>
+
+<!--
+
+                                              2Ω           θ   θ       θ   θ
+                                                   “ 2 cos2 tan “ 2 sin cos “ sin θ,                                                    (9.67)                --><a id="eq:286"></a><!--
+                                            1 ` Ω2         2   2       2   2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:286} \frac {2\Omega }{1+\Omega ^2}=2\cos ^2\frac {\theta }{2}\tan \frac {\theta }{2}=2\sin \frac {\theta }{2} \cos \frac {\theta }{2}=\sin \theta ,
+\end{equation}
+
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{67}\)</span>
+
+<!--
+
+
+                                               2Ω2      2 tan2 θ2           θ
+                                                   2
+                                                     “        2   θ
+                                                                    “ 2 sin2 “ 1 ´ cos θ,                                               (9.68)                --><a id="eq:287"></a><!--
+                                              1`Ω      1 ` tan 2            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:287} \frac {2\Omega ^2}{1+\Omega ^2}=\frac {2\tan ^2\frac {\theta }{2}}{1+\tan ^2\frac {\theta }{2}} =2\sin ^2\frac {\theta }{2}=1-\cos \theta ,
+\end{equation}
+
+</p>
+
+<p>
+then allow one to rewrite
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{68}\)</span>
+
+<!--
+
+                                                                                                   sin θ ⃗        1 ´ cos θ ⃗      ⃗
+                  ⃗x1 “ A⃗x “ cos θ⃗x ` sin θ⃗n ˆ ⃗x ` p1 ´ cos θqp⃗n ¨ ⃗xq⃗n “ cos θ⃗x `                θ ˆ ⃗x `          pθ ¨ ⃗xqθ.   (9.69)                --><a id="eq:288"></a><!--
+                                                                                                     θ               θ2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:288} \vec x&apos;=A\vec x=\cos \theta \vec x+\sin \theta \vec n\times \vec x+(1-\cos \theta )(\vec n\cdot \vec x)\vec n=\cos \theta \vec x+ \frac {\sin
+\theta }{\theta } \vec \theta \times \vec x+\frac {{1-\cos \theta }}{\theta ^2}(\vec \theta \cdot \vec x)\vec \theta .
+\end{equation}
+
+</p>
+
+<p>
+When expressed in components, this gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{69}\)</span>
+
+<!--
+
+                                                                    sin θ α             1 ´ cos θ α
+                                   x1α “ Aα β xβ “ cos θxα `             ϵ βγ θβ xγ ` p          qθ θβ xβ .                             (9.70)                --><a id="eq:93a"></a><!--
+                                                                      θ                    θ2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:93a} x^{\prime \alpha }={A^\alpha }_\beta x^\beta =\cos \theta x^\alpha +\frac {\sin \theta }{\theta }{\epsilon ^\alpha }_{\beta \gamma }\theta ^\beta
+x^\gamma +(\frac {1-\cos \theta }{\theta ^2})\theta ^\alpha \theta _\beta x^\beta .
+\end{equation}
+
+</p>
+
+<p>
+When identifying the coefficient of \(x^\beta \) on the right hand side, this gives the rotation matrix,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{70}\)</span>
+
+<!--
+
+                                                                  1 ´ cos θ α      sin θ α
+                                           Aα β “ cos θδβα ` p             qθ θβ ´      ϵ βγ θγ ,                                       (9.71)                --><a id="eq:93c"></a><!--
+                                                                     θ2              θ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:93c} {A^\alpha }_\beta =\cos \theta \delta ^\alpha _\beta +(\frac {1-\cos \theta }{\theta ^2})\theta ^\alpha \theta _\beta -\frac {\sin \theta }{\theta
+}{\epsilon ^\alpha }_{\beta \gamma }\theta ^\gamma ,
+\end{equation}
+
+</p>
+
+<p>
+or, equivalently, in terms of
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{71}\)</span>
+
+<!--
+
+                                                                                       θα
+                                                           ⃗n “ θ̂α eα ,       θ̂α “      ,                                             (9.72)                --><a id="eq:434"></a><!--
+                                                                                        θ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:434} \vec n=\hat \theta ^{\alpha }e_{\alpha },\quad \hat \theta ^\alpha =\frac {\theta ^\alpha }{\theta },
+\end{equation}
+
+</p>
+
+<p>
+as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{72}\)</span>
+
+<!--
+
+
+                                            Aα β “ cos θpδβα ´ θ̂α θ̂β q ` θ̂α θ̂β ` sin θθ̂γ ϵα γβ .                                   (9.73)                --><a id="eq:435"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:435} \boxed {{A^\alpha }_\beta =\cos \theta (\delta ^\alpha _\beta -\hat \theta ^\alpha \hat \theta _\beta ) +\hat \theta ^\alpha \hat \theta _\beta +\sin
+\theta \hat \theta ^\gamma {\epsilon ^\alpha }_{\gamma \beta }}.
+\end{equation}
+
+</p>
+<!--
+...... subsubsection Worked exercise: Rotation around the axis ......
+-->
+<h6 id="autosec-109">Worked exercise: Rotation around the \(\vec 1_ z\) axis</h6>
+<a id="mechanics-autopage-109"></a>
+
+
+<a id="sec:work-exerc-rotat"></a>
+
+<p>
+In order to find the analytic expression for a rotation matrix around the \(z\) axis by an angle \(\theta \) in the \((x,y)\) plane from the expression <span class="textup">(<a href="node-9.html#eq:93a">9.70</a>)</span>, we
+note that \(\theta ^1=\theta ^2=0\), while \(\theta ^3=\theta \). It follows that \(-\frac {\sin \theta }{\theta }{\epsilon ^\alpha }_{\beta \gamma }\theta ^\gamma = -\frac {\sin \theta
+}{\cancel {\theta }}{\epsilon ^\alpha }_{\beta 3}\cancel {\theta }\), so that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{73}\)</span>
+
+<!--
+
+
+                                                                                                                    ˛ ¨                ˛
+                                                                                                                       0   0      0
+                                                                                               ¨                                           ¨                    ˛
+                                                                                               cos θ     0      0                              0     ´ sin θ   0
+                                                                                      A⃗1z “ ˝ 0       cos θ    0 ‚` ˝0    0      0        ` sin θ      0      0‚
+                                                                                                                      ˚                  ‹ ˝
+                                                                                                                               2
+                                                                                                                                         ‚
+                                                                                                 0       0    cos θ    0   0 θp1´cos
+                                                                                                                                    2
+                                                                                                                                      θq
+                                                                                                                                               0        0      0
+                                                                                             ¨                    ˛        (9.74) θ                                                        --><a id="eq:289"></a><!--
+                                                                                              cos θ    ´ sin θ 0
+                                                                                           “ ˝ sin θ    cos θ 0‚,
+                                                                                                 0        0     1
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:289} A_{\vec 1_ z}&amp;=\begin{pmatrix} \cos \theta &amp; 0 &amp; 0\\ 0 &amp;\cos \theta &amp; 0\\ 0 &amp; 0 &amp; \cos \theta \end {pmatrix}+
+\begin{pmatrix} 0 &amp; 0 &amp; 0\\ 0 &amp;0 &amp; 0\\ 0 &amp; 0 &amp; \frac {\cancel {\theta ^2}(1-\cos \theta )}{\cancel {\theta ^2}} \end {pmatrix}+ \begin{pmatrix}
+0 &amp; -\sin \theta &amp; 0\\ \sin \theta &amp; 0 &amp; 0\\ 0 &amp; 0 &amp; 0 \end {pmatrix}\\&amp;= \begin{pmatrix} \cos \theta &amp; -\sin \theta &amp; 0\\ \sin
+\theta &amp;\cos \theta &amp; 0\\ 0 &amp; 0 &amp; 1 \end {pmatrix}, \end {split}
+\end{equation}
+
+</p>
+
+<p>
+which is the expected result from the viewpoint of a rotation matrix in the \((x,y)\) plane.
+</p>
+<!--
+...... subsection One-parameter groups of transformations involving time ......
+-->
+<h5 id="autosec-110"><span class="sectionnumber">9.2.5&#x2003;</span>One-parameter groups of transformations involving time</h5>
+<a id="mechanics-autopage-110"></a>
+
+
+<a id="sec:one-parameter-groups-1"></a>
+
+<p>
+Consider now a one-parameters group of invertible transformations that affects time as well,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{74}\)</span>
+
+<!--
+
+                                     "
+                                            q 1α “ q 1α pq β , t; sq,
+                                                                      ùñ q 1α pt1 q “ q 1α pq β ptpt1 ; sqq, tpt1 ; sq; sq,                               (9.75)                                                                           --><a id="eq:95"></a><!--
+                                            t1 “ t1 pt; sq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:95} \left \{\begin{array}{l}q^{\prime \alpha }=q^{\prime \alpha }(q^\beta ,t;s),\\ t&apos;=t&apos;(t;s)\end {array}\right .                                                                                           \Longrightarrow q^{\prime \alpha
+}(t&apos;) =q^{\prime \alpha }(q^\beta (t(t&apos;;s)),t(t&apos;;s);s),
+\end{equation}
+
+</p>
+
+<p>
+with \(q^{\prime \alpha }=q^{\prime \alpha }(q^\beta ,t;0)=q^\alpha \), \(t&apos;(t;0)=t\). According to the equation <span class="textup">(<a href="node-7.html#eq:24">7.26</a>)</span> of
+the previous section, the transformed Lagrangian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{75}\)</span>
+
+<!--
+
+                                                    dq 1 pt1 q 1      dt ` 1 1 1 dt1 d                                     ˘
+                                   L1 pq 1 pt1 q,         1
+                                                              , t q “   1
+                                                                          L qpq pt q, t q,      1
+                                                                                                  qpq 1 pt1 q, t1 q, tpt1 q ,                             (9.76)                                                                           --><a id="eq:96"></a><!--
+                                                      dt              dt                   dt dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:96} L&apos;(q&apos;(t&apos;),\frac {dq&apos;(t&apos;)}{dt&apos;},t&apos;)=\frac {dt}{dt&apos;}L \big (q(q&apos;(t&apos;),t&apos;),\frac {dt&apos;}{dt}\frac
+{d}{dt&apos;}q(q&apos;(t&apos;),t&apos;),t(t&apos;)\big ),
+\end{equation}
+
+</p>
+
+<p>
+where we have temporarily suppressed the \(s\) dependence. Let us assume that the transformed Lagrangian is equal to the starting point Lagrangian (in terms of the new variables), up to a total derivative,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{76}\)</span>
+
+<!--
+
+                                                       dq 1 pt1 q 1                   d                   d
+                                      L1 pq 1 pt1 q,             , t q “ Lpq 1 pt1 q, 1 q 1 pt1 q, t1 q ´ 1 G1 pq 1 pt1 q, t1 q,                          (9.77)                                                                           --><a id="eq:97"></a><!--
+                                                         dt1                         dt                  dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:97} L&apos;(q&apos;(t&apos;),\frac {dq&apos;(t&apos;)}{dt&apos;},t&apos;) =L(q&apos;(t&apos;),\frac {d}{dt&apos;}q&apos;(t&apos;),t&apos;)-\frac
+{d}{dt&apos;}G&apos;(q&apos;(t&apos;),t&apos;),
+\end{equation}
+
+</p>
+
+<p>
+with \(G&apos;|_{s=0}=0\). When using the inverse transformation and multiplying by \(\frac {dt&apos;}{dt}\), the generalized invariance condition <span class="textup">(<a
+href="node-9.html#eq:97">9.77</a>)</span>, where the left hand side has been expressed in terms of \(L\) by using <span class="textup">(<a href="node-9.html#eq:96">9.76</a>)</span>, can also be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{77}\)</span>
+
+<!--
+
+                                             d             dt1 ` 1       dt d                    ˘ d
+                               Lpqptq,          qptq, tq “    L q pq, tq, 1 q 1 pqptq, tq, t1 ptq ´ Gpqptq, tq,                                           (9.78)                                                                           --><a id="eq:98"></a><!--
+                                             dt            dt            dt dt                     dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:98} L(q(t),\frac {d}{dt}q(t),t)=\frac {dt&apos;}{dt}L\big (q&apos;(q,t),\frac {dt}{dt&apos;} \frac {d}{dt}q&apos;(q(t),t),t&apos;(t)\big )- \frac
+{d}{dt}G(q(t),t),
+\end{equation}
+
+</p>
+
+<p>
+with \(G(q(t),t)=G&apos;(q&apos;(q(t),t),t&apos;(t))\).
+</p>
+
+<p>
+In terms of the action, this generalized invariance condition means that as a functional of the new trajectories and the transformed end-points, the
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{78}\)</span>
+
+<!--
+
+                                                                       ż t1 “t1 ptf q
+                                                                1
+                                                                                      `        d
+                                                          Srq s “                  dtL q 1 ptq, q 1 ptq, tq,                                              (9.79)                                                                           --><a id="eq:99"></a><!--
+                                                                         1  1
+                                                                        t “t pti q             dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:99} S[q&apos;]=\int ^{t&apos;=t&apos;(t_f)}_{t&apos;=t&apos;(t_i)}dt L\big (q&apos;(t),\frac {d}{dt}q&apos;(t),t),
+\end{equation}
+
+</p>
+
+<p>
+equals the action as a functional of the old trajectories, up to a boundary term. Indeed, by first changing the name of the dummy integration variable, and then doing the change of variables from primed to unprimed ones, we get
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{79}\)</span>
+
+<!--
+
+                           ż t1 “t1 ptf q                                           ż t“tf
+                    1                                           d 1 1 1                             dt1 ` 1          dt d                    ˘
+                Srq s “                     dt1 Lpq 1 pt1 q,       q pt q, t q “               dt      L q pqptq, tq, 1 q 1 pqptq, tq, t1 ptq .       (9.80)                                                                              --><a id="eq:100"></a><!--
+                            t1 “t1 pti q                       dt1                      t“ti        dt               dt dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:100} S[q&apos;]=\int ^{t&apos;=t&apos;(t_f)}_{t&apos;=t&apos;(t_i)}dt&apos; L(q&apos;(t&apos;),\frac {d}{dt&apos;} q&apos;(t&apos;),t&apos;)=\int
+^{t=t_f}_{t=t_i}dt\frac {dt&apos;}{dt} L\big (q&apos;(q(t),t),\frac {dt}{dt&apos;}\frac {d}{dt} q&apos;(q(t),t),t&apos;(t)\big ).
+\end{equation}
+
+</p>
+
+<p>
+When using the generalized invariance condition <span class="textup">(<a href="node-9.html#eq:98">9.78</a>)</span>, this gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{80}\)</span>
+
+<!--
+
+                                                               ż tf                                        ıtf
+                                                                                   d            ”
+                                                 Srq 1 s “            dtLpqptq,       qptq, tq ` Gpqptq, tq .                                         (9.81)                                                                              --><a id="eq:101"></a><!--
+                                                                ti                 dt                       ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:101} S[q&apos;]=\int ^{t_f}_{t_i}dt L(q(t),\frac {d}{dt} q(t),t)+\Big [G(q(t),t)\Big ]^{t_f}_{t_i}.
+\end{equation}
+
+</p>
+
+<p>
+Note that the boundary term does not contribute when computing the variation of trajectories with fixed end-points.
+</p>
+
+<p>
+Expanding the transformed trajectories to first order in \(s\) gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{81}\)</span>
+
+<!--
+
+                               "
+                                   q 1α pt1 q “ q α ptq ` sRα pq β , tq ` Ops2 q,
+                                                                                  ,                     G “ sG1 pq, tq ` Ops2 q,                      (9.82)                                                                              --><a id="eq:95a"></a><!--
+                                   t1 “ t ` sξptq ` Ops2 q,
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:95a} \left \{\begin{array}{l}q^{\prime \alpha }(t&apos;)=q^{\alpha }(t) +s R^\alpha (q^\beta ,t)+O(s^2),\\ t&apos;=t+s\xi (t)+O(s^2),\end {array}\right
+.,\quad G=sG_1(q,t)+O(s^2),
+\end{equation}
+
+</p>
+
+<p>
+the associated equal-time infinitesimal virtual variation is
+</p>
+<span class="hidden"> \(\seteqnumber{0}{9.}{82}\)</span>
+
+
+<!--
+
+
+
+                    1 ` 1α            ˘      1`                                  ˘
+   δS q α ptq “ lim    q ptq ´ q α ptq “ lim q 1α pt1 ´ sξptq ` Ops2 qq ´ q α ptq
+                sÑ0 s                    sÑ0 s
+                                                                                                                                                        1` α                         dq 1α                       ˘ “ Rα ´ q9α ξ .
+                                                                                                                                                  “ lim     ptq ` sRα pq β ptq, tq ´ s 1 pt1 qξptq ` Ops2 q ´ 
+                                                                                                                                                          q                                                  q α
+                                                                                                                                                                                                                 ptq                  (9.83)--><a id="eq:102"></a><!--
+                                                                                                                                                    sÑ0 s                             dt
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:102} \boxed {\delta _S q^\alpha (t)}=\lim _{s\to 0}\frac {1}{s}\big (q^{\prime \alpha }(t)-q^\alpha (t)\big )= \lim _{s\to 0}\frac {1}{s}\big (q^{\prime
+\alpha }(t&apos;-s\xi (t)+O(s^2))-q^\alpha (t)\big )\\= \lim _{s\to 0}\frac {1}{s}\big (\cancel {q^\alpha (t)}+s R^\alpha (q^\beta (t),t)-s\frac {dq^{\prime \alpha
+}}{dt&apos;}(t&apos;)\xi (t) +O(s^2)-\cancel {q^\alpha (t)}\big )=\boxed {R^\alpha -\dot q^\alpha \xi }.
+\end{multline}
+Such a variation leaves the Lagrangian invariant up to a total derivative. Indeed, the generalized invaraince condition <span class="textup">(<a href="node-9.html#eq:98">9.78</a>)</span> can be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{83}\)</span>
+
+<!--
+
+
+                                                              9 d pq ` sRq, t ` sξ ´ s d G1 ` Ops2 q.
+                                               `                                  ˘
+                                            9 Lpq ` sR, p1 ´ sξq
+                        Lpq, 9q, tq “ p1 ` sξq                                                                                                     (9.84)                                                                                 --><a id="eq:103"></a><!--
+                                                                 dt                   dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:103} L(q,\dot q,t)=(1+s\dot \xi )\big (L(q+sR,(1-s\dot \xi )\frac {d}{dt}(q+sR),t+s\xi \big )-s\frac {d}{dt} G_1+O(s^2).
+\end{equation}
+
+</p>
+
+<p>
+To order \(0\) in \(s\), this is an identity, while the terms of order \(1\) yield
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{84}\)</span>
+
+<!--
+
+
+                                          BL     BL d               BL    
+                                                                               d
+                            9
+                            ξLpq, 9q, tq ` α Rα ` α p Rα ´ ξ9q9α q ` pq,
+                                                                        9q, tqξ ´ G1 “ 0.                                                         (9.85)                                                                                 --><a id="eq:104"></a><!--
+                                          Bq     B q9 dt            Bt
+                                                                                 dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:104} \dot \xi L(q,\dot q,t)+\frac {\partial L}{\partial q^\alpha } R^\alpha + \frac {\partial L}{\partial \dot q^\alpha }(\frac {d}{dt}R^\alpha -\dot \xi
+\dot q^\alpha )+\cancel {\frac {\partial L}{\partial t}(q,\dot q,t)\xi }-\frac {d}{dt} G_1=0.
+\end{equation}
+
+</p>
+
+<p>
+The first term can be integrated by parts
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{85}\)</span>
+
+<!--
+
+
+                                                   9 “ d pξLq ´ ξp BL q9α ` BL q:α ` BL
+                                                   ξL                                 q,
+                                                                                                                                                  (9.86)                                                                                 --><a id="eq:105"></a><!--
+                                                       dt         Bq α      B q9α   Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:105} \dot \xi L=\frac {d}{dt}(\xi L)-\xi (\frac {\partial L}{\partial q^\alpha }\dot q^\alpha +\frac {\partial L}{\partial \dot q^\alpha }\ddot q^\alpha
++\cancel {\frac {\partial L}{\partial t}}),
+\end{equation}
+
+</p>
+
+<p>
+and, when cancelling (as indicated) and combining like terms, we get
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{86}\)</span>
+
+<!--
+
+                    BL α              BL d             d                   d
+                       α
+                         pR ´ q9α ξq ` α pRα ´ q9α ξq “ pG1 ´ ξLq ðñ δS L “ pG1 ´ ξLq.                                                             (9.87)                                                                                 --><a id="eq:106"></a><!--
+                    Bq                B q9 dt          dt                  dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:106} \frac {\partial L}{\partial q^\alpha }(R^\alpha -\dot q^\alpha \xi )+\frac {\partial L}{\partial \dot q^\alpha }\frac {d}{dt}(R^\alpha -\dot q^\alpha
+\xi )=\frac {d}{dt}(G_1-\xi L) \iff \delta _S L=\frac {d}{dt}( G_1-\xi L).
+\end{equation}
+
+</p>
+
+<p>
+The associated conserved quantity is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{87}\)</span>
+
+<!--
+
+
+                                                                    K “ pα δS q α ` ξL ´ G1 .                                                      (9.88)                                                                                 --><a id="eq:107"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:107} \boxed {K=p_\alpha \delta _S q^\alpha +\xi L-G_1}.
+\end{equation}
+
+</p>
+<!--
+...... subsection Time-translation symmetry and conservation of energy ......
+-->
+<h5 id="autosec-111"><span class="sectionnumber">9.2.6&#x2003;</span>Time-translation symmetry and conservation of energy</h5>
+<a id="mechanics-autopage-111"></a>
+
+
+<a id="sec:time-transl-symm"></a>
+
+<p>
+In particular, a Lagrangian does not depend explicit on time, \(\frac {\partial L}{\partial t}=0\) iff it possesses the symmetry \(q^{\prime \alpha }=q^\alpha \), \(t&apos;=t-s\). In this case \(G=0\), \(\xi =-1\),
+\(R^\alpha =0\), \(\delta _S q^\alpha =\dot q^\alpha \). The associated conserved quantity is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{88}\)</span>
+
+<!--
+
+
+                                                    E “ pα q9α ´ L,                                                     (9.89)                                                             --><a id="eq:109"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:109} E=p_\alpha \dot q^\alpha -L,
+\end{equation}
+
+</p>
+
+<p>
+discussed previously, which now appears from the viewpoint of the symmetry of the system under constant time translations.
+</p>
+<!--
+...... subsection Galilean boosts ......
+-->
+<h5 id="autosec-112"><span class="sectionnumber">9.2.7&#x2003;</span>Galilean boosts</h5>
+<a id="mechanics-autopage-112"></a>
+
+
+<a id="sec:galil-transf"></a>
+
+<p>
+Galilean transformations on a system of particles are described by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{89}\)</span>
+
+<!--
+
+                                           α   β    α     α 1
+                                     x1α
+                                      i “ A β xi ` v t ` a , t “ t ` b,         AT A “ 1.                                    (9.90)                                                                                     --><a id="eq:108"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:108} x^{\prime \alpha }_i={A^\alpha }_\beta x^\beta _i+v^\alpha t+a^\alpha , t&apos;=t+b, \quad A^TA=\mathbb {1}.
+\end{equation}
+
+</p>
+
+<p>
+They consists of a combination of spatial translations, rotations, time-translations, described by the constant parameter \(b\), and changes of observers with a constant velocity in a given direction, sometimes called “Galilean boosts” and described by the
+\(3\) parameters \(v^\alpha \).
+</p>
+
+<p>
+Sometimes it is useful to provide the following \(5\times 5 \) matrix form of these transformations (suppressing the particle label)
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{90}\)</span>
+
+<!--
+
+                                           ¨ 1α ˛ ¨ α                   ˛ ¨ β˛
+                                            x        A β       vα    aα    x
+                                           ˝ t1 ‚ “ ˝ 000       1     b ‚˝ t ‚.                                              (9.91)                                                                                     --><a id="eq:254"></a><!--
+                                             1        000       0     1     1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:254} \begin{pmatrix} x^{\prime \alpha }\\ t&apos;\\ 1 \end {pmatrix} =\begin{pmatrix} {A^\alpha }_\beta &amp; v^\alpha &amp; a^\alpha \\ 0 0 0 &amp; 1 &amp;
+b\\ 0 0 0 &amp; 0 &amp; 1 \end {pmatrix} \begin{pmatrix} x^\beta \\ t\\ 1 \end {pmatrix}.
+\end{equation}
+
+</p>
+
+<p>
+We have already analyzed invariance of the particle Lagrangian <span class="textup">(<a href="node-9.html#eq:81">9.23</a>)</span> under spatial translations (parameters \(a^\alpha \)) and rotations (parameters \(\omega
+^\alpha \) of the rotation matrix \(A\)) and the associated conserved quantities \(P_\alpha ,J_\alpha \). For the time-translation, explicit time-indepence implies that the associated conserved conserved quanity is the energy, \(E=\sum
+_i\frac {\partial L}{\partial \dot x^\alpha _{(i)}}\dot x^\alpha _{(i)}-L\). So only the Galilean boosts,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{91}\)</span>
+
+<!--
+
+                                                      α    α
+                                                x1α
+                                                 i “ xi ` v t,       t1 “ t,                                                 (9.92)                                                                                     --><a id="eq:266"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:266} x^{\prime \alpha }_i= x^\alpha _i+v^\alpha t,\quad t&apos;=t,
+\end{equation}
+
+</p>
+
+<p>
+remain to be analyzed explicitely.
+</p>
+
+<p>
+More generally, for the whole set of Galilean transformations, we have \(\frac {dt&apos;}{dt}=1\), \(\frac {dx^{\prime \alpha }_{i}(dt&apos;)}{t&apos;}={A^\alpha }_\beta \frac {dx^{\beta
+}_{i}(t)}{dt} +v^\alpha \). For the kinetic energy of the particle Lagrangian <span class="textup">(<a href="node-9.html#eq:81">9.23</a>)</span>, this gives
+</p>
+<span class="hidden"> \(\seteqnumber{0}{9.}{92}\)</span>
+
+
+<!--
+
+
+                                      β                γ
+    dx1α pt1 q 1ÿ             dxpiq             dxpiq
+  Tp i 1 q “       mpiq pAα β       ` v α qpAαγ       ` vα q
+      dt       2 i             dt                dt
+
+                                                                                                      1ÿ       dxα
+                                                                                                                 piq dxαpiq
+                                                                                                                             ÿ
+                                                                                                                                       α
+                                                                                                                                          dxβpiq   1ÿ
+                                                                                                    “     mpiq              ` mpiq vα A β        `    m v α vα
+                                                                                                      2 i       dt     dt    i
+                                                                                                                                           dt      2 i piq
+                                                                                                                                                                      dxα     d ÿ                     1
+                                                                                                                                                               “ Tp      i
+                                                                                                                                                                           q ` p mpiq vα pAα β xβpiq ` tv α q.    (9.93)--><a id="eq:110"></a><!--
+                                                                                                                                                                       dt     dt i                    2
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:110} T(\frac {dx^{\prime \alpha }_i(t&apos;)}{dt&apos;})=\frac 12 \sum _im_{(i)}({A^\alpha }_\beta \frac {dx^\beta _{(i)}}{dt} +v^\alpha )(A_{\alpha \gamma
+}\frac {dx^\gamma _{(i)}}{dt} +v_\alpha )\\= \frac 12 \sum _im_{(i)} \frac {dx^\alpha _{(i)}}{dt}\frac {dx_{\alpha (i)}}{dt} +\sum _i m_{(i)} v_\alpha {A^\alpha }_\beta
+\frac {dx^\beta _{(i)}}{dt}+\frac 12 \sum _i m_{(i)} v^\alpha v_\alpha \\=T(\frac {dx^\alpha _{i}}{dt})+\frac {d}{dt}(\sum _i m_{(i)} v_\alpha ({A^\alpha }_\beta
+x^\beta _{(i)}+\frac 12 t v^\alpha ).
+\end{multline}
+Since relative distances are invariant even if one translates the individual coordinates linearly in time (by the same amount), the potential is also invariant. It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{93}\)</span>
+
+<!--
+
+                                                                     ÿ                      1
+                                                              G“       mpiq vα pAα β xβpiq ` tv α q,                                                             (9.94)                                                 --><a id="eq:111"></a><!--
+                                                                     i
+                                                                                            2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:111} G=\sum _i m_{(i)} v_\alpha ({A^\alpha }_\beta x^\beta _{(i)}+\frac 12 t v^\alpha ),
+\end{equation}
+
+</p>
+
+<p>
+and, for Galilean boosts parametrized by \(v^\gamma \), \(R^\alpha _{\gamma i}=\delta ^\alpha _\gamma t\), \(\xi =0\), \(\frac {\partial G}{\partial v^\gamma }|_{a,b,\theta ,v=0}=\sum
+_im_{(i)} x_{\gamma (i)}\). The associated conserved quantities are thus
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{94}\)</span>
+
+<!--
+
+                                                                         ÿ
+                                                                Kγ “         mpiq px9 γpiq t ´ xγpiq q.                                                          (9.95)                                                 --><a id="eq:112"></a><!--
+                                                                         i
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:112} K_\gamma =\sum _im_{(i)} (\dot x_{\gamma (i)} t-x_{\gamma (i)}).
+\end{equation}
+
+</p>
+<!--
+...... section Hamiltonian version of Noether’s theorem ......
+-->
+<h4 id="autosec-113"><span class="sectionnumber">9.3&#x2003;</span>Hamiltonian version of Noether’s theorem</h4>
+<a id="mechanics-autopage-113"></a>
+
+
+<a id="sec:hamilt-vers-noeth"></a>
+
+<p>
+As a consequence of <span class="textup">(<a href="node-6.html#eq:312">6.26</a>)</span>, in the Hamiltonian formalism, a first integral is a (possibly time dependent) phase space function \(K(z^A,t)\) that satisfies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{95}\)</span>
+
+<!--
+
+
+                                                                                   BK
+                                                                        tK, Hu `       “0.                                                         (9.96)                                  --><a id="eq:315"></a><!--
+                                                                                    Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:315} \boxed {\{K,H\}+\frac {\partial K}{\partial t}=0}.
+\end{equation}
+
+</p>
+
+<p>
+It follows directly from the properties of the Poisson bracket and the partial derivative that first integrals form a vector space. Furthermore,
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-114"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">11</span></span>. </span> The Poisson bracket \(\{K_1,K_2\}\) of two first integrals
+\(K_1,K_2\) is a first integral.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{96}\)</span>
+
+<!--
+
+
+                                                                                                              B
+                                                                                          ttK1 , K2 u, Hu `      tK1 , K2 u
+                                                                                                              Bt
+                                                                                                                                  B BK1 AB BK2      BK1     B BK2
+                                                                                          “ ttK1 , Hu, K2 u ` tK1 , tK2 , Huu ` (9.97)   ω         ` A ω AB                                                             --><a id="eq:330"></a><!--
+                                                                                                                                 Bt Bz A      Bz B  Bz      Bt Bz B
+                                                                                                        BK1                              BK2
+                                                                                          “ ttK1 , Hu `      , K2 u ` tK1 , tK2 , Hu `       u “ 0,
+                                                                                                          Bt                              Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:330} &amp; \{\{K_1,K_2\},H\}+\frac {\partial }{\partial t}\{K_1,K_2\}\\&amp; =\{\{K_1,H\},K_2\}+\{K_1,\{K_2,H\}\} +\frac {\partial }{\partial
+t}\frac {\partial K_1}{\partial z^A}\omega ^{AB}\frac {\partial K_2}{\partial z^B}+\frac {\partial K_1}{\partial z^A}\omega ^{AB}\frac {\partial }{\partial t}\frac
+{\partial K_2}{\partial z^B} \\&amp;=\{\{K_1,H\}+\frac {\partial K_1}{\partial t},K_2\}+\{K_1,\{K_2,H\}+\frac {\partial K_2}{\partial t}\}=0, \end {split}
+\end{equation}
+
+</p>
+
+<p>
+where we have used the Jacobi identity.
+</p>
+
+<p>
+By definition, a Lie algebra is a vector space equipped with a bi-linear, skew-symmetric operation that satisfies the Jacobi identity. As a consequence, in the Hamiltonian formalism, first integrals equipped with the Poisson bracket form a Lie algebra.
+</p>
+
+<p>
+In the Hamiltonian formalism, infinitesimal symmetries are variations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{97}\)</span>
+
+<!--
+
+                                                                 "
+                                           A      A                  δZ q α “ Qα pq, p, tq,
+                                       δZ z “ Z pz, tq ðñ                                                                         (9.98)                                                                                --><a id="eq:331"></a><!--
+                                                                     δZ pα “ Pα pq, p, tq,
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:331} \delta _Z z^A=Z^A(z,t) \iff \left \{\begin{array}{l} \delta _Z q^\alpha =Q^\alpha (q,p,t),\\ \delta _Z p_\alpha =P_\alpha (q,p,t), \end {array} \right .
+\end{equation}
+
+</p>
+
+<p>
+that leave the first order Hamiltonian Lagrangian \(L_H=\dot q^\alpha p_\alpha -H(z,t)\) invariant up to a total time derivative,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{98}\)</span>
+
+<!--
+
+                                                                d
+                                                      δZ LH “      F pz, tq.                                                      (9.99)                                                                                --><a id="eq:332"></a><!--
+                                                                dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:332} \delta _Z L_H=\frac {d}{dt} F(z,t).
+\end{equation}
+
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-115"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">12</span></span>. </span> There is a 1-1 correspondence between symmetries and first integrals,
+up to constants. Furthermore, the first integral is the canonical generator of the symmetry in the sense that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{99}\)</span>
+
+<!--
+
+
+
+                                                     Z A “ tz A , Ku “ ´vK
+                                                                         A
+                                                                           .                                                         (9.100)                                                               --><a id="eq:333"></a><!--
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:333} Z^A=\{z^A,K\}=-v_K^A.
+\end{equation}
+
+
+</p>
+
+<p>
+
+
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Writing out explicitly <span class="textup">(<a href="node-9.html#eq:332">9.99</a>)</span>, we get
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{100}\)</span>
+
+<!--
+
+
+                                                                                                            d α         BH     BH     d
+                                                                                                   Pα q9α ` pα Q ´ Qα α ´ P α      “ F
+                                                                                                            dt          Bq     Bpα    dt
+                                                                                                                                          (9.101)                                                          --><a id="eq:334"></a><!--
+                                                                                                                           BH      BH    d
+                                                                                                    ðñ Pα q9α ´ Qα p9α ´ Qα α ´ Pα     “ pF ´ Qα pα q.
+                                                                                                                           Bq      Bpα   dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:334} \begin{split} &amp; P_\alpha \dot q^\alpha +p_\alpha \frac {d}{dt} Q^\alpha -Q^\alpha \frac {\partial H}{\partial q^\alpha }-P_\alpha \frac {\partial
+H}{\partial p_\alpha }=\frac {d}{dt} F\\ &amp; \iff P_\alpha \dot q^\alpha -Q^\alpha \dot p_\alpha -Q^\alpha \frac {\partial H}{\partial q^\alpha }-P_\alpha \frac
+{\partial H}{\partial p_\alpha }=\frac {d}{dt} (F-Q^\alpha p_\alpha ). \end {split}
+\end{equation}
+
+</p>
+
+<p>
+Defining
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{101}\)</span>
+
+<!--
+
+
+                                                                 K “ Qα pα ´ F ,                                                                     (9.102)                                               --><a id="eq:336"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\boxed {K=Q^\alpha p_\alpha -F},\label {eq:336}
+\end{equation}
+
+</p>
+
+<p>
+this equation may be re-written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{102}\)</span>
+
+<!--
+
+                                                             BH        BH       BK       BK    BK
+                                      Pα q9α ´ Qα p9α ´ Qα      α
+                                                                  ´ Pα     ` q9α α ` p9α     `     “ 0.                                              (9.103)                                               --><a id="eq:335"></a><!--
+                                                             Bq        Bpα      Bq       Bpα    Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:335} P_\alpha \dot q^\alpha -Q^\alpha \dot p_\alpha -Q^\alpha \frac {\partial H}{\partial q^\alpha }-P_\alpha \frac {\partial H}{\partial p_\alpha }+\dot
+q^\alpha \frac {\partial K}{\partial q^\alpha }+\dot p_\alpha \frac {\partial K}{\partial p_\alpha }+\frac {\partial K}{\partial t}=0.
+\end{equation}
+
+</p>
+
+<p>
+Because this is an identity that has to hold for all \(q^\alpha ,p_\alpha ,\dot q^\alpha ,\dot p_\alpha ,t\), one may identify the coefficients of \(\dot q^\alpha ,\dot p_\alpha \) to find
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{103}\)</span>
+
+<!--
+
+                                        BK                          BK
+                               Pα “ ´        “ tpα , Ku,     Qα “       “ tq α , Ku ðñ Z A “ tz A , Ku “ ´vK
+                                                                                                           A
+                                                                                                             .                                       (9.104)                                               --><a id="eq:337"></a><!--
+                                        Bq α                        Bpα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:337} P_\alpha =-\frac {\partial K}{\partial q^\alpha }=\{p_\alpha ,K\},\quad Q^\alpha =\frac {\partial K}{\partial p_\alpha }=\{q^\alpha ,K\}\iff
+Z^A=\{z^A,K\}=-v^A_K.
+\end{equation}
+
+</p>
+
+<p>
+Inserting these expressions back into <span class="textup">(<a href="node-9.html#eq:335">9.103</a>)</span> yields
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{104}\)</span>
+
+<!--
+
+                                             BK BH     BK BH    BK                  BK
+                                         ´          α
+                                                      ` α     `     “ 0 ðñ tK, Hu `     “ 0,                                                         (9.105)                                               --><a id="eq:338"></a><!--
+                                             Bpα Bq    Bq Bpα    Bt                  Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:338} -\frac {\partial K}{\partial p_\alpha }\frac {\partial H}{\partial q^\alpha } +\frac {\partial K}{\partial q^\alpha }\frac {\partial H}{\partial
+p_\alpha } +\frac {\partial K}{\partial t}=0\iff \{K,H\}+\frac {\partial K}{\partial t}=0,
+\end{equation}
+
+</p>
+
+<p>
+which shows that \(K\) is a first integral. Note that, for a given symmetry, \(F\), and thus also \(K\), are defined only up to a constant by this procedure.
+</p>
+
+<p>
+Conversely, for a given first integral \(K\), one may follow the proof in the reverse direction to show that \(Z^A=\{z^A,K\}\) defines a symmetry. Finally, if two first integrals define the same symmetry, \(\{z^A,K_1\}=Z^A=\{z^A,K_2\}\), it
+follows that \(\{z^A,K_1-K_2\}=0\), or \(\omega ^{AB}\frac {\partial (K_1-K_2)}{\partial z^B}=0\), and thus that \(\frac {\partial (K_1-K_2)}{\partial z^B}=0\). As a consequence, \(K_1-K_2=c(t)\).
+But since \(K_1-K_2\) is a first integral, \(\{K_1-K_2,H\}+\frac {\partial (K_1-K_2)}{\partial t}=0\), it follows that \(c\) is a constant.
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-116"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">13</span></span>. </span> Infinitesimal symmetries equipped with the commutator of symmetries
+constitute a Lie algebra isomorphic to the Lie algebra of first integrals equipped with the Poisson bracket, up to constants.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Proof : ....
+</p>
+<!--
+...... section More applications ......
+-->
+<h4 id="autosec-117"><span class="sectionnumber">9.4&#x2003;</span>More applications</h4>
+<a id="mechanics-autopage-117"></a>
+
+
+<a id="sec:appl-galil-algebra"></a>
+<!--
+...... subsection Hamiltonian formulation of the Galilean algebra ......
+-->
+<h5 id="autosec-118"><span class="sectionnumber">9.4.1&#x2003;</span>Hamiltonian formulation of the Galilean algebra</h5>
+<a id="mechanics-autopage-118"></a>
+
+
+<a id="sec:hamilt-form-galil"></a>
+<!--
+...... subsection Worked Exercise 4: Geodesic motion and Killing vectors ......
+-->
+<h5 id="autosec-119"><span class="sectionnumber">9.4.2&#x2003;</span>Worked Exercise 4: Geodesic motion and Killing vectors</h5>
+<a id="mechanics-autopage-119"></a>
+
+
+<a id="sec:worked-exercice-4:"></a>
+
+<p>
+Consider the generalized coordinates \(q^\alpha \) and the Lagrangian
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{105}\)</span>
+
+<!--
+
+                                                                        1
+                                                                 L“       gαβ q9α q9β ,                                   (9.106)                                                   --><a id="eq:445"></a><!--
+                                                                        2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:445} L=\frac 12 g_{\alpha \beta }\dot q^\alpha \dot q^\beta ,
+\end{equation}
+
+</p>
+
+<p>
+where the “metric” \(g_{\alpha \beta }=g_{\alpha \beta }(q)\) is a given function of the coordinates.
+</p>
+
+<p>
+Defining the Christoffel symbols of the second kind by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{106}\)</span>
+
+<!--
+
+
+                                                                 Γδβγ “ g δα Γαβγ ,                                       (9.107)                                                   --><a id="eq:446"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:446} \Gamma ^\delta _{\beta \gamma }=g^{\delta \alpha }\Gamma _{\alpha \beta \gamma },
+\end{equation}
+
+</p>
+
+<p>
+where \(g^{\delta \alpha }\) denotes the inverse metric, \(g^{\delta \alpha }g_{\alpha \beta }=\delta ^\delta _\beta \), show that the equations of motion are equivalent to the geodesic equation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{107}\)</span>
+
+<!--
+
+
+                                                               q:δ ` Γδβγ q9β q9γ “ 0.                                    (9.108)                                                   --><a id="eq:449"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:449} \ddot q^\delta +\Gamma ^{\delta }_{\beta \gamma }\dot q^\beta \dot q^\gamma =0.
+\end{equation}
+
+</p>
+
+<p>
+Solution: This follows directly by multiplying the two non-vanshing first terms in <span class="textup">(<a href="node-4.html#eq:183">4.35</a>)</span> by the inverse metric.
+</p>
+
+<p>
+Let us introduce the notation \(\partial _\alpha =\frac {\partial }{\partial q^\alpha }\). Suppose that there is a \(\xi ^\alpha (q)\) that satisfies the “Killing equation”
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{108}\)</span>
+
+<!--
+
+
+                                                    ξ γ Bγ gαβ ` Bα ξ γ gγβ ` Bβ ξ γ gαγ “ 0.                             (9.109)                                                   --><a id="eq:447"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:447} \xi ^\gamma \partial _\gamma g_{\alpha \beta }+\partial _\alpha \xi ^\gamma g_{\gamma \beta }+\partial _\beta \xi ^\gamma g_{\alpha \gamma }=0.
+\end{equation}
+
+</p>
+
+<p>
+Show that the transformation \(\delta _\xi ^1 q^\alpha =\xi ^\alpha (q)\) defines a symmetry with associated Noether charge
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{109}\)</span>
+
+<!--
+
+
+                                                                 Kξ1 “ gαβ q9α ξ β .                                      (9.110)                                                   --><a id="eq:448"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:448} K_\xi ^1=g_{\alpha \beta }\dot q^\alpha \xi ^\beta .
+\end{equation}
+
+</p>
+
+<p>
+Solution: The variation of the Lagrangian vanishes on account of <span class="textup">(<a href="node-9.html#eq:447">9.109</a>)</span>,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{110}\)</span>
+
+<!--
+
+                                                        1
+                                              δξ1 L “     Bγ gαβ ξ γ ` q9α q9β ` gαγ q9α Bβ ξ γ q9β “ 0.                  (9.111)                                                   --><a id="eq:450"></a><!--
+                                                        2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:450} \delta _\xi ^1 L=\frac 12 \partial _\gamma g_{\alpha \beta } \xi ^\gamma +\dot q^\alpha \dot q^\beta +g_{\alpha \gamma }\dot q^\alpha \partial _\beta
+\xi ^\gamma \dot q^\beta =0.
+\end{equation}
+
+</p>
+
+<p>
+The result then follows from the formula for the Noether charge.
+</p>
+<!--
+...... subsection Worked Exercise 5: Geodesic motion and Killing tensors ......
+-->
+<h5 id="autosec-120"><span class="sectionnumber">9.4.3&#x2003;</span>Worked Exercise 5: Geodesic motion and Killing tensors</h5>
+<a id="mechanics-autopage-120"></a>
+
+
+<a id="sec:worked-exercise-5:"></a>
+
+<p>
+This exercise requires an understanding of the covariant derivative \(D_\mu \) defined in terms of the Levi-Civita connection \(\Gamma ^{\delta }_{\beta \gamma }\). It is metric compatible \(D_\alpha g_{\beta \gamma }=0\).
+The Killing equation <span class="textup">(<a href="node-9.html#eq:447">9.109</a>)</span> can then be shown to be equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{111}\)</span>
+
+<!--
+
+
+                                                                       Dpα0 ξα1 q “ 0,                                                                            (9.112)                                                                              --><a id="eq:452"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:452} D_{(\alpha _0}\xi _{\alpha _1)}=0,
+\end{equation}
+
+</p>
+
+<p>
+where indices are lowered and raised with the metric \(g_{\mu \nu }\) and its inverse, and a round parenthesis denotes complete symmetrization of the enclosed indices,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{112}\)</span>
+
+<!--
+
+                                                                            1 ÿ
+                                                         Mpα1 ...αk q “            Mασp1q ...ασpkq .                                                              (9.113)                                                                              --><a id="eq:453"></a><!--
+                                                                            k! σPS
+                                                                                   k
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:453} M_{(\alpha _1\dots \alpha _k)}=\frac {1}{k!}\sum _{\sigma \in S_k}M_{\alpha _{\sigma (1)}\dots \alpha _{\sigma (k)}}.
+\end{equation}
+
+</p>
+
+<p>
+A Killing tensor is a symmetric tensor \(\xi _{\alpha _1\dots \alpha _k}=\xi _{(\alpha _1\dots \alpha _k)}\) that satisfies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{113}\)</span>
+
+<!--
+
+
+                                                                     Dpα0 ξα1 ...αk q “ 0.                                                                        (9.114)                                                                              --><a id="eq:454"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:454} D_{(\alpha _0}\xi _{\alpha _1\dots \alpha _k)}=0.
+\end{equation}
+
+</p>
+
+<p>
+In particular, a Killing vector corresponds to the particular case where \(k=1\).
+</p>
+
+<p>
+Show that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{114}\)</span>
+
+<!--
+
+                                                                        1
+                                                             Kξk “        ξα ...α q9α1 . . . q9αk                                                                 (9.115)                                                                              --><a id="eq:455"></a><!--
+                                                                        k! 1 k
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:455} K_\xi ^k=\frac {1}{k!}\xi _{\alpha _1\dots \alpha _k}\dot q^{\alpha _1}\dots \dot q^{\alpha _k}
+\end{equation}
+
+</p>
+
+<p>
+is a conserved quantity and that the associated symmetry is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{9.}{115}\)</span>
+
+<!--
+
+                                                                        1
+                                                         δξk q α “           ξα        q9α2 . . . q9αk .                                                          (9.116)                                                                              --><a id="eq:456"></a><!--
+                                                                     pk ´ 1q! α2 ...αk
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:456} \delta _\xi ^kq^\alpha =\frac {1}{(k-1)!}\xi ^\alpha _{\alpha _2\dots \alpha _k}\dot q^{\alpha _2}\dots \dot q^{\alpha _k}.
+\end{equation}
+
+</p>
+
+<p>
+Solution:
+</p>
+<span class="hidden"> \(\seteqnumber{0}{9.}{116}\)</span>
+
+
+<!--
+
+
+
+  d k  1                                        1
+    K “ Bα0 ξα1 ...αk q9α0 q9α1 . . . q9αk `         ξα ...α q:α1 q9α2 . . . q9αk
+  dt ξ k!                                    pk ´ 1q! 1 k
+                                                                                                           1                                      1                    δL
+                                                                                                       “     Bα ξα ...α q9α0 q9α1 . . . q9αk `         ξα ...α p´g α1 β β qq9α2 . . . q9αk
+                                                                                                           k! 0 1 k                            pk ´ 1q! 1 k            δq
+                                                                                                                                                                                                1
+                                                                                                                                                                                       ´              ξβα2 ...αk Γβα0 α1 q9α0 q9α1 . . . q9αk .   (9.117)--><a id="eq:457"></a><!--
+                                                                                                                                                                                             pk ´ 1q!
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:457} \frac {d}{dt} K^k_\xi =\frac {1}{k!}\partial _{\alpha _0}\xi _{\alpha _1\dots \alpha _k}\dot q^{\alpha _0}\dot q^{\alpha _1}\dots \dot q^{\alpha
+_k}+\frac {1}{(k-1)!} \xi _{\alpha _1\dots \alpha _k}\ddot q^{\alpha _1}\dot q^{\alpha _2}\dots \dot q^{\alpha _k}\\= \frac {1}{k!}\partial _{\alpha _0}\xi _{\alpha
+_1\dots \alpha _k}\dot q^{\alpha _0}\dot q^{\alpha _1}\dots \dot q^{\alpha _k}+\frac {1}{(k-1)!} \xi _{\alpha _1\dots \alpha _k}(-g^{\alpha _1\beta }\frac {\delta
+L}{\delta q^\beta })\dot q^{\alpha _2}\dots \dot q^{\alpha _k}\\-\frac {1}{(k-1)!} \xi _{\beta \alpha _2\dots \alpha _k}\Gamma ^\beta _{\alpha _0\alpha _1}\dot
+q^{\alpha _0}\dot q^{\alpha _1}\dots \dot q^{\alpha _k}.
+\end{multline}
+The first and the third term vanish on account of <span class="textup">(<a href="node-9.html#eq:455">9.115</a>)</span>. Since the second term is proportional to the field equations, \(K^k_\xi \) is a conserved quantity, and
+one may read off the characteristic of the symmetry <span class="textup">(<a href="node-9.html#eq:456">9.116</a>)</span>.
+</p>
+<!--
+...... subsection Worked Exercise 6: Laplace-Runge-Lenz vector ......
+-->
+<h5 id="autosec-121"><span class="sectionnumber">9.4.4&#x2003;</span>Worked Exercise 6: Laplace-Runge-Lenz vector</h5>
+<a id="mechanics-autopage-121"></a>
+
+
+<a id="sec:laplace-runge-lenz"></a>
+<!--
+...... subsection Worked Exercise 7: Harmonic oscillator conserved quantities ......
+-->
+<h5 id="autosec-122"><span class="sectionnumber">9.4.5&#x2003;</span>Worked Exercise 7: Harmonic oscillator conserved quantities</h5>
+<a id="mechanics-autopage-122"></a>
+
+
+<a id="sec:worked-exercise-7:"></a>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

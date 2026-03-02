@@ -1,0 +1,122 @@
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {1}{\ignorespaces Extremisation, constraints and Lagrange multipliers\relax }}{5}{}
+\contentsline {section}{\numberline {1.1}{\ignorespaces Unconstrained extremisation\relax }}{6}{}
+\contentsline {section}{\numberline {1.2}{\ignorespaces Constraints and regularity conditions\relax }}{7}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {1.3}{\ignorespaces Constrained extremisation\relax }}{10}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {2}{\ignorespaces Constrained systems and d'Alembert principle\relax }}{11}{}
+\contentsline {section}{\numberline {2.1}{\ignorespaces Holonomic constraints\relax }}{12}{}
+\contentsline {section}{\numberline {2.2}{\ignorespaces d'Alembert's theorem\relax }}{15}{}
+\contentsline {section}{\numberline {2.3}{\ignorespaces Principle of virtual work\relax }}{17}{}
+\contentsline {subsection}{\numberline {2.3.1}{\ignorespaces Worked Exercice 1: The Lever\relax }}{19}{}
+\contentsline {subsection}{\numberline {2.3.2}{\ignorespaces Worked Exercice 2: Block and Tackle (Palan)\relax }}{22}{}
+\@nameuse {authoredbysup}
+\contentsline {section}{\numberline {2.4}{\ignorespaces Non-holonomic constraints\relax }}{26}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {2.5}{\ignorespaces d'Alembert's principle\relax }}{30}{}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {3}{\ignorespaces Hamilton and least action principles\relax }}{31}{}
+\contentsline {section}{\numberline {3.1}{\ignorespaces Natural and virtual trajectories\relax }}{32}{}
+\contentsline {section}{\numberline {3.2}{\ignorespaces Hamilton's principle\relax }}{34}{}
+\contentsline {section}{\numberline {3.3}{\ignorespaces Least action principle\relax }}{36}{}
+\contentsline {chapter}{\numberline {4}{\ignorespaces Lagrangian mechanics\relax }}{38}{}
+\contentsline {section}{\numberline {4.1}{\ignorespaces Lagrange coordinates\relax }}{39}{}
+\contentsline {section}{\numberline {4.2}{\ignorespaces Lagrange equations\relax }}{40}{}
+\@nameuse {authoredbysup}
+\contentsline {section}{\numberline {4.3}{\ignorespaces Dissipative systems\relax }}{41}{}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {4.4}{\ignorespaces Euler-Lagrange equations\relax }}{42}{}
+\contentsline {paragraph}{Remarks}{43}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {subsection}{\numberline {4.4.1}{\ignorespaces Worked Exercice 3: A Lagrangian of sufficient generality\relax }}{45}{}
+\contentsline {section}{\numberline {4.5}{\ignorespaces Points of equilibrium\relax }}{46}{}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {5}{\ignorespaces Applications of the Lagrangian formalism\relax }}{47}{}
+\contentsline {section}{\numberline {5.1}{\ignorespaces The simple pendulum\relax }}{48}{}
+\contentsline {subsection}{\numberline {5.1.1}{\ignorespaces Small oscillations\relax }}{53}{}
+\contentsline {subsection}{\numberline {5.1.2}{\ignorespaces Conservation of energy\relax }}{54}{}
+\contentsline {subsection}{\numberline {5.1.3}{\ignorespaces Points of equilibrium\relax }}{55}{}
+\contentsline {subsection}{\numberline {5.1.4}{\ignorespaces Vanishing velocity\relax }}{56}{}
+\contentsline {subsection}{\numberline {5.1.5}{\ignorespaces Motion if \(\alpha =\pi \)\relax }}{57}{}
+\contentsline {subsection}{\numberline {5.1.6}{\ignorespaces Oscillations\relax }}{58}{}
+\contentsline {subsection}{\numberline {5.1.7}{\ignorespaces Revolutions\relax }}{59}{}
+\contentsline {section}{\numberline {5.2}{\ignorespaces The brachystochrone\relax }}{60}{}
+\contentsline {subsection}{\numberline {5.2.1}{\ignorespaces Statement of the problem\relax }}{61}{}
+\contentsline {subsection}{\numberline {5.2.2}{\ignorespaces Main equations\relax }}{62}{}
+\contentsline {subsection}{\numberline {5.2.3}{\ignorespaces Finding the curve\relax }}{65}{}
+\contentsline {subsection}{\numberline {5.2.4}{\ignorespaces Properties of the motion\relax }}{68}{}
+\contentsline {chapter}{\numberline {6}{\ignorespaces Hamiltonian formalism\relax }}{71}{}
+\contentsline {section}{\numberline {6.1}{\ignorespaces Legendre transform\relax }}{72}{}
+\contentsline {section}{\numberline {6.2}{\ignorespaces Legendre transform in mechanics and Hamilton's equations\relax }}{78}{}
+\contentsline {section}{\numberline {6.3}{\ignorespaces Poisson brackets\relax }}{80}{}
+\contentsline {chapter}{\numberline {7}{\ignorespaces Covariance of the Lagrangian formalism\relax }}{81}{}
+\contentsline {section}{\numberline {7.1}{\ignorespaces Change of dependent variables\relax }}{82}{}
+\contentsline {section}{\numberline {7.2}{\ignorespaces Change of the independent variable\relax }}{83}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {7.3}{\ignorespaces Combined change of variables\relax }}{84}{}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {8}{\ignorespaces Canonical transformations\relax }}{85}{}
+\contentsline {section}{\numberline {8.1}{\ignorespaces Generating functionals\relax }}{86}{}
+\contentsline {section}{\numberline {8.2}{\ignorespaces Invariance of canonical Poisson brackets\relax }}{87}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {8.3}{\ignorespaces Infinitesimal canonical transformations\relax }}{89}{}
+\contentsline {section}{\numberline {8.4}{\ignorespaces One-parameter group of canonical transformations\relax }}{90}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {8.5}{\ignorespaces Liouville theorem\relax }}{91}{}
+\contentsline {chapter}{\numberline {9}{\ignorespaces Noether's theorem and Galilean relativity\relax }}{95}{}
+\contentsline {section}{\numberline {9.1}{\ignorespaces Noether's first theorem\relax }}{96}{}
+\@nameuse {authoredbysup}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {9.2}{\ignorespaces Applications\relax }}{98}{}
+\contentsline {subsection}{\numberline {9.2.1}{\ignorespaces Explicit time independence and conservation of energy\relax }}{99}{}
+\contentsline {subsection}{\numberline {9.2.2}{\ignorespaces Cyclic variables and conservation of canonical momentum\relax }}{100}{}
+\contentsline {subsection}{\numberline {9.2.3}{\ignorespaces One-parameter groups of transformations\relax }}{101}{}
+\contentsline {subsection}{\numberline {9.2.4}{\ignorespaces Parametrization of a rotation\relax }}{103}{}
+\contentsline {subsubsection}{Invariant line}{104}{}
+\contentsline {subsubsection}{Geometry of a rotation in 3 dimensions}{105}{}
+\contentsline {subsubsection}{Analytic expression of the rotation matrix}{108}{}
+\contentsline {subsubsection}{Worked exercise: Rotation around the $\vec 1_ z$ axis}{109}{}
+\@nameuse {authoredbysup}
+\contentsline {subsection}{\numberline {9.2.5}{\ignorespaces One-parameter groups of transformations involving time\relax }}{110}{}
+\contentsline {subsection}{\numberline {9.2.6}{\ignorespaces Time-translation symmetry and conservation of energy\relax }}{111}{}
+\contentsline {subsection}{\numberline {9.2.7}{\ignorespaces Galilean boosts\relax }}{112}{}
+\@nameuse {authoredbylec}
+\contentsline {section}{\numberline {9.3}{\ignorespaces Hamiltonian version of Noether's theorem\relax }}{113}{}
+\@nameuse {authoredbysup}
+\contentsline {section}{\numberline {9.4}{\ignorespaces More applications\relax }}{117}{}
+\contentsline {subsection}{\numberline {9.4.1}{\ignorespaces Hamiltonian formulation of the Galilean algebra\relax }}{118}{}
+\contentsline {subsection}{\numberline {9.4.2}{\ignorespaces Worked Exercise 4: Geodesic motion and Killing vectors\relax }}{119}{}
+\contentsline {subsection}{\numberline {9.4.3}{\ignorespaces Worked Exercise 5: Geodesic motion and Killing tensors\relax }}{120}{}
+\contentsline {subsection}{\numberline {9.4.4}{\ignorespaces Worked Exercise 6: Laplace-Runge-Lenz vector\relax }}{121}{}
+\contentsline {subsection}{\numberline {9.4.5}{\ignorespaces Worked Exercise 7: Harmonic oscillator conserved quantities\relax }}{122}{}
+\@nameuse {authoredbylec}
+\@nameuse {authoredbysup}
+\contentsline {chapter}{\numberline {10}{\ignorespaces Reduced and alternative variational principles\relax }}{123}{}
+\contentsline {section}{\numberline {10.1}{\ignorespaces Routhian procedure for cyclic variables\relax }}{124}{}
+\contentsline {section}{\numberline {10.2}{\ignorespaces Parametrized systems\relax }}{125}{}
+\contentsline {section}{\numberline {10.3}{\ignorespaces Maupertius'/ Jacobi's principle\relax }}{126}{}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {11}{\ignorespaces Dynamics in non-inertial frames\relax }}{127}{}
+\@nameuse {authoredbysup}
+\contentsline {chapter}{\numberline {12}{\ignorespaces Relativistic particles\relax }}{128}{}
+\@nameuse {authoredbylec}
+\contentsline {chapter}{\numberline {13}{\ignorespaces Charged particle in electromagnetic field\relax }}{129}{}
+\contentsline {section}{\numberline {13.1}{\ignorespaces Newtonian formulation\relax }}{130}{}
+\contentsline {section}{\numberline {13.2}{\ignorespaces Lagrangian formulation\relax }}{131}{}
+\contentsline {section}{\numberline {13.3}{\ignorespaces Hamiltonian formulation\relax }}{132}{}
+\@nameuse {authoredbysup}
+\contentsline {chapter}{\numberline {14}{\ignorespaces To be added\relax }}{133}{}
+\contentsline {section}{References}{133}{}
+

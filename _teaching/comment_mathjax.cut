@@ -1,0 +1,2 @@
+\PackageNoteNoLine{lwarp, cancel}{The MathJax v3 extension will be used}
+\CustomizeMathJax{\require{cancel}}

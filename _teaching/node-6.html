@@ -1,0 +1,1613 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Hamiltonian formalism</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                       // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);          // the subequations argument
+                         const neweqsection = parser.GetArgument(name);       // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                         MathJax.config.subequations=newsubequations ;        // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;                // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-71"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Hamiltonian formalism ......
+-->
+<h3 id="autosec-71">Chapter&nbsp;<span class="sectionnumber">6&#x2003;</span>Hamiltonian formalism</h3>
+
+<a id="mechanics-autofile-6"></a>
+
+<p>
+In the regular case, the Euler-Lagrange equations are equivalent to a system of \(n\) second order equations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{0}\)</span>
+
+<!--
+
+
+                                                                              q:α “ f α pq β , q9β , tq.                                                              (6.1)                                                 --><a id="eq:93"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:93} \ddot q^{\alpha }=f^{\alpha }(q^{\beta },\dot q^{\beta },t).
+\end{equation}
+
+</p>
+
+<p>
+These equations may be turned into an equivalent system of \(2n\) first order differential equations by introducing additional variables \(v^{\alpha }\) and writing,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{1}\)</span>
+
+<!--
+
+
+                                                                      q9α “ v α ,   v9 α “ f α pq β , v β , tq.                                                     (6.2)                                                 --><a id="eq:189"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:189} \dot q^{\alpha }=v^{\alpha },\quad \dot v^{\alpha }=f^{\alpha }(q^{\beta },v^{\beta },t).
+\end{equation}
+
+</p>
+
+<p>
+This system does not in general derive from a variational principle. One of the aims of the Hamiltonian formulation is to construct an equivalent system of \(2n\) first order differential equations that does follow from a variational principle. This will be
+done through a suitable Legendre transform below.
+</p>
+<!--
+...... section Legendre transform ......
+-->
+<h4 id="autosec-72"><span class="sectionnumber">6.1&#x2003;</span>Legendre transform</h4>
+<a id="mechanics-autopage-72"></a>
+
+
+<a id="sec:legendre-transform"></a>
+
+<p>
+Take a function of one variable,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{2}\)</span>
+
+<!--
+
+
+                                                                          y “ ypxq,                                                                            (6.3)                                                --><a id="eq:265"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:265} y=y(x),
+\end{equation}
+
+</p>
+
+<p>
+and suppose that one is interested in the extrema of this function, i.e., the points \(\bar x\) such that \(y&apos;(\bar x)=0\). The problem that one would like to address is to represent this function by using the derivative
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{3}\)</span>
+
+<!--
+
+                                                                                dy
+                                                                           p“      ,                                                                           (6.4)                                                --><a id="eq:290"></a><!--
+                                                                                dx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:290} p=\frac {d y}{dx},
+\end{equation}
+
+</p>
+
+<p>
+as the dependent variable without loosing any information. Note that at each point \(x\), the derivative represents the slope of the tangent to the curve at that point, \(\frac {dy}{dx}=\tan \theta \), with \(\theta \) the angle of the tangent
+and the horizontal axis.
+</p>
+
+<p>
+One possibility would be to invert the last equation to get \(x=x(p)\), which is possible locally when \(\frac {d^2 y}{dx^2}\neq 0\), and then to substitute into <span class="textup">(<a
+href="node-6.html#eq:265">6.3</a>)</span>. If the original function was \(y=x^2\), one gets \(p=2x\), \(x=\frac 12 p\) and then \(y=\frac 14 p^2\). The problem is however that the relation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{4}\)</span>
+
+<!--
+
+                                                                              1 dy 2
+                                                                         y“    p q ,                                                                           (6.5)                                                --><a id="eq:291"></a><!--
+                                                                              4 dx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:291} y=\frac 14 (\frac {d y}{dx})^2,
+\end{equation}
+
+</p>
+
+<p>
+does not allow one to uniquely reconstruct the parabola, with its extremum at \(\bar x=0\) Indeed, separation of variables gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{5}\)</span>
+
+<!--
+
+                                                            dy       ?
+                                                            ? “ dx ÝÑ y “ x ´ c ÝÑ y “ px ´ cq2 ,                                                              (6.6)                                                --><a id="eq:292"></a><!--
+                                                           2 y
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:292} \frac {dy}{2\sqrt {y}}=dx \longrightarrow \sqrt y=x-c \longrightarrow y=(x-c)^2,
+\end{equation}
+
+</p>
+
+<p>
+and the original parabola is not uniquely reconstructed.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-74"></a>
+
+<p>
+
+<a href="parabolas.png" target="_blank" ><img
+   src="parabolas.png"
+   style="
+   width:182pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-11" ></a >
+Figure&nbsp;6.1: \(y=(x-c)^2\)
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+A better solution consists in representing the original curve \(y=y(x)\) by the family of tangent lines at each point. In order to do so, one represents each member of this family by two numbers \((p,\Psi )\), the slope of the tangent \(p\) and the
+\(-\Psi \), the intersection of the tangent line to the curve at the point \(x\) with the \(y\) axis. One then replaces the relation \(y=y(x)\) by \(\psi =\psi (p)\). In terms of equations, this means that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{6}\)</span>
+
+<!--
+
+                                                                 ∆y   y`Ψ
+                                                            p“      “     ðñ Ψ “ px ´ y.                                                                        (6.7)                                                --><a id="eq:293"></a><!--
+                                                                 ∆x   x´0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:293} p=\frac {\Delta y}{\Delta x}=\frac {y+\Psi }{x-0}\iff \Psi =px -y.
+\end{equation}
+
+</p>
+
+<p>
+More precisely, given \(y=y(x)\), define
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{7}\)</span>
+
+<!--
+
+
+                                                                                 dy
+                                                                            p“      .                                                                           (6.8)                                                --><a id="eq:310"></a><!--
+                                                                                 dx
+
+-->
+
+<p>
+
+\begin{equation}
+\boxed {p=\frac {dy}{dx}}\label {eq:310}.
+\end{equation}
+
+</p>
+
+<p>
+This relation can be inverted if \(\frac {d^2y}{dx^2}\neq 0\) which we assume to be the case below. Inverting gives \(x=x(p)\), and in particular also that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{8}\)</span>
+
+<!--
+
+                                                                          dy ˇˇ
+                                                                              ˇ   “ p.                                                                          (6.9)                                                --><a id="eq:309"></a><!--
+                                                                          dx xppq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:309} \frac {dy}{dx}\Big |_{x(p)}=p.
+\end{equation}
+
+</p>
+
+<p>
+The Legendre transform \(\Psi (p)\) is defined as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{9}\)</span>
+
+<!--
+
+                                                             “         ı
+                                                       Ψppq “ px ´ ypxq |x“xppq “ pxppq ´ ypxppqq .                                                            (6.10)                                                --><a id="eq:294"></a><!--
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:294} \boxed {\Psi (p)=\big [px-y(x)\Big ]|_{x=x(p)}=px(p)-y(x(p))}.
+\end{equation}
+
+</p>
+
+<p>
+In the particular case where \(y=x^2\), \(p=2x\), \(x=\frac 12 p\), \(\Psi (p)=\frac 1 4 p^2\).
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:334pt ; ">
+
+<a id="mechanics-autopage-76"></a>
+
+<p>
+
+<a href="tangents.png" target="_blank" ><img
+   src="tangents.png"
+   style="
+   width:182pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-12" ></a >
+Figure&nbsp;6.2: Family of tangent lines to \(y=x^2\)
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-77"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">6</span></span>. </span> The Legendre transform is invertible. More precisely, the Legendre
+transform of the Legendre transform is the starting point function.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Indeed, we have to define \(\tilde x=\frac {d\Psi }{dp}\) and invert this relation to get \(p=p(\tilde x)\) and then define \(\tilde y(\tilde x)=[\tilde xp-\Psi (p)]|_{p(\tilde x)}\). When using the definition of
+\(\Psi \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{10}\)</span>
+
+<!--
+
+                                                            d                              dx dy ˇˇ    dx
+                                                                                                         
+                                                  x̃ppq “      rpxppq ´ ypxppqqs “ xppq ` p  ´ ˇ       .                                                 (6.11)                                                --><a id="eq:295"></a><!--
+                                                            dp                            dp  dx xppq dp
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:295} \tilde x(p)=\frac {d}{dp}[px(p)-y(x(p))]=x(p)+\cancel {p\frac {dx}{dp}} -\cancel {\frac {dy}{dx}\Big |_{x(p)}\frac {dx}{dp}}.
+\end{equation}
+
+</p>
+
+<p>
+It follows that \(\tilde x=x\) and that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{11}\)</span>
+
+<!--
+
+                                                                                 dΨ
+                                                                            x“                                                                               (6.12)                                                --><a id="eq:311"></a><!--
+                                                                                 dp
+
+-->
+
+<p>
+
+\begin{equation}
+x=\frac {d\Psi }{dp} \label {eq:311}
+\end{equation}
+
+</p>
+
+<p>
+is the inverse relation to \(p=\frac {dy}{dx}\). Furthermore,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{12}\)</span>
+
+<!--
+
+                                                       ”                     ıˇ
+                                                ỹpxq “ xp ´ rpx ´ ypxqs|xppq ˇ           xppxq
+                                                                                             ´ ppxqx
+                                                                                                    ` ypxq.                                                (6.13)
+                                                                              ˇ
+                                                                                         “                                                                                                                        --><a id="eq:296"></a><!--
+                                                                                  ppxq           
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:296} \tilde y(x)=\Big [xp-[px-y(x)]|_{x(p)}\Big ]\Big |_{p(x)}=\cancel {xp(x)} -\cancel {p(x)x}+y(x).
+\end{equation}
+
+</p>
+
+<p>
+In the particular case where \(\Psi (p)=\frac 14 p^2\), \(x=\frac {\partial \Psi }{\partial p}=\frac 12 p\) so that \(p=2x\) and \(y=[xp-\frac 14 p^2]|_{p=2x}=x^2\).
+</p>
+
+<p>
+The Legendre transform may be generalized to a function of several variables where some variables are transformed and others remain passive. It has important applications for instance in the context of thermodynamics.
+</p>
+<!--
+...... section Legendre transform in mechanics and Hamilton’s equations ......
+-->
+<h4 id="autosec-78"><span class="sectionnumber">6.2&#x2003;</span>Legendre transform in mechanics and Hamilton’s equations</h4>
+<a id="mechanics-autopage-78"></a>
+
+
+<a id="sec:legendre-transf-mech"></a>
+
+<p>
+Consider a Lagrangian, \(L(q^\alpha ,\dot q^\alpha ,t)\), \(\alpha =1,\dots ,n\). By definition, the Hamiltonian is the Legendre transform of the Lagrangian with respect to all the generalized velocities \(\dot q^\alpha \). One
+thus defines the canonical momenta by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{13}\)</span>
+
+<!--
+
+
+                                                                                             BL
+                                                                                     pα “          .                                                              (6.14)                       --><a id="eq:297"></a><!--
+                                                                                             B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:297} \boxed {p_\alpha =\frac {\partial L}{\partial \dot q^\alpha }}.
+\end{equation}
+
+</p>
+
+<p>
+In order to be able to invert this relation,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{14}\)</span>
+
+<!--
+
+
+                                                                              q9α “ q9α pq β , pβ , tq,                                                           (6.15)                        --><a id="eq:299"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:299} \dot q^\alpha =\dot q^{\alpha }(q^\beta ,p_\beta ,t),
+\end{equation}
+
+</p>
+
+<p>
+one needs
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{15}\)</span>
+
+<!--
+
+
+                                                                                       B2 L
+                                                                                |               | ‰ 0,                                                            (6.16)                        --><a id="eq:298"></a><!--
+                                                                                    B q9α B q9β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:298} |\frac {\partial ^2 L}{\partial \dot q^\alpha \partial \dot q^\beta }|\neq 0,
+\end{equation}
+
+</p>
+
+<p>
+and the Hamiltonian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{16}\)</span>
+
+<!--
+
+                                                                                 ”          ıˇ
+                                                                Hpq β , pβ , tq “ pα q9α ´ L ˇ α                           .                                      (6.17)
+                                                                                             ˇ
+                                                                                                                                                                                               --><a id="eq:300"></a><!--
+                                                                                                         q9 pq β ,pβ ,tq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:300} \boxed {H(q^\beta ,p_\beta ,t)=\Big [p_\alpha \dot q^\alpha -L\Big ]\Big |_{\dot q^{\alpha }(q^\beta ,p_\beta ,t)}}.
+\end{equation}
+
+</p>
+
+<p>
+By the theorem on the inverse Legendre transform, we thus have that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{17}\)</span>
+
+<!--
+
+                                                                                             BH
+                                                                                     q9α “                                                                        (6.18)                       --><a id="eq:301"></a><!--
+                                                                                             Bpα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:301} \dot q^\alpha =\frac {\partial H}{\partial p_\alpha }
+\end{equation}
+
+</p>
+
+<p>
+is the inverse of relation <span class="textup">(<a href="node-6.html#eq:297">6.14</a>)</span> and that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{18}\)</span>
+
+<!--
+
+                                                                               ”                        ıˇ
+                                                             Lpq α , q9α , tq “ pα q9α ´ Hpq β , pβ , tq ˇ                     .                                  (6.19)
+                                                                                                         ˇ
+                                                                                                                                                                                                --><a id="eq:302"></a><!--
+                                                                                                                   ppq, 9
+                                                                                                                       q,tq
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:302} L(q^\alpha ,\dot q^\alpha ,t)=\Big [p_\alpha \dot q^\alpha -H(q^\beta ,p_\beta ,t)\Big ]\Big |_{p(q,\dot q,t)}.
+\end{equation}
+
+</p>
+
+<p>
+This suggests to study the least action principle based on
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{19}\)</span>
+
+<!--
+
+                                                                      ż tf
+                                                     SH rq, ps “             dt LH ,      LH “ pα q9α ´ Hpq β , pβ , tq,                                          (6.20)                       --><a id="eq:303"></a><!--
+                                                                       ti
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:303} S_H[q,p]=\int ^{t_f}_{t_i}dt\, L_H,\quad L_H=p_\alpha \dot q^\alpha -H(q^\beta ,p_\beta ,t),
+\end{equation}
+
+</p>
+
+<p>
+which is first order in time derivatives. For infinitesimal virtual instantaneous variations \(\delta q^\alpha (t),\delta p_\alpha (t)\) such that \(\delta q^\alpha (t_f)=0=\delta q^\alpha (t_i)\), one finds
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{20}\)</span>
+
+<!--
+
+                                                       ż tf
+                                                                                BH     d                    BH
+                                               δSH “          dt rδpα pq9α ´        q ` ppα δq α q ` p´p9α ´ α qδq α s,                                           (6.21)                        --><a id="eq:304"></a><!--
+                                                        ti                      Bpα    dt                   Bq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:304} \delta S_H=\int ^{t_f}_{t_i}dt\, [\delta p_\alpha (\dot q^\alpha -\frac {\partial H}{\partial p_\alpha })+\frac {d}{dt}(p_\alpha \delta q^\alpha
+)+(-\dot p_\alpha -\frac {\partial H}{\partial q^\alpha })\delta q^\alpha ],
+\end{equation}
+
+</p>
+
+<p>
+so that the equations of motion that one obtains when requiring that the first order action principle be an extremum for all such variations are Hamilton’s equations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{21}\)</span>
+
+<!--
+
+
+                                                                                BH                       BH
+                                                                        q9α “       ,        p9α “ ´          .                                                   (6.22)                       --><a id="eq:305"></a><!--
+                                                                                Bpα                      Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:305} \boxed { \dot q^\alpha =\frac {\partial H}{\partial p_\alpha },\quad \dot p_\alpha =-\frac {\partial H}{\partial q^\alpha }}.
+\end{equation}
+
+</p>
+
+<p>
+These \(2n\) first order differential equations appear here as the Euler-Lagrange equations of \(L_H\) with respect to \(p_\alpha ,q^\alpha \).
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-79"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">7</span></span>. </span> Hamiltonian’s equations are equivalent to the Euler-Lagrange equations
+of motions associated to the Lagrangian \(L\), \(\frac {\delta L}{\delta q^\alpha }=0\).
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+The proof proceeds as follows. From the definition of the Legendre transform, a general variation of the Hamiltonian \(dH\) is given by
+</p>
+<span class="hidden"> \(\seteqnumber{0}{6.}{22}\)</span>
+
+
+<!--
+
+
+
+  BH α BH              BH        !“
+                                          α
+                                                        ‰ˇ         )
+       dq `     dp α `     dt “ d   p α q
+                                        9   ´ Lpq, q,
+                                                   9  tq ˇ
+  Bq α      Bpα         Bt                                qpq,p,tq
+                                                           9
+
+                                                                                                                          B q9α  β   B q9α  B q9α          BL ˇˇ
+                                                                                              “ dpα q9α | 9qpq,p,tq ` pα p β    dq   `       dp β `    dtq ´      αˇ9
+                                                                                                                                                                              dq α
+                                                                                                                          Bq
+                                                                                                                          
+                                                                                                                                      Bp
+                                                                                                                                       
+                                                                                                                                          β        Bt         Bq   qpq,p,tq
+
+                                                                                                                                                            BL ˇˇ           B q9α  β   B q9α  B q9α        BL ˇˇ
+                                                                                                                                                         ´ αˇ             p β     dq   `       dp β `    dtq ´     ˇ        dt.   (6.23)--><a id="eq:306"></a><!--
+                                                                                                                                                            B q9 9qpq,p,tq Bq          Bp
+                                                                                                                                                                                            β        Bt       Bt 9qpq,p,tq
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:306} \frac {\partial H}{\partial q^\alpha }dq^\alpha +\frac {\partial H}{\partial p_\alpha }dp_\alpha +\frac {\partial H}{\partial t}dt =d\Big \{\big
+[p_\alpha \dot q^\alpha -L(q,\dot q,t)\big ]\big |_{\dot q(q,p,t)}\Big \}\\=dp_\alpha \dot q^\alpha |_{\dot q(q,p,t)}+p_\alpha (\cancel {\frac {\partial \dot q^\alpha
+}{\partial q^\beta }dq^\beta }+\cancel {\frac {\partial \dot q^\alpha }{\partial p_\beta }dp_\beta } +\cancel {\frac {\partial \dot q^\alpha }{\partial t}dt})-\frac
+{\partial L}{\partial q^\alpha }\Big |_{\dot q(q,p,t)} dq^\alpha \\-\frac {\partial L}{\partial \dot q^\alpha }\Big |_{\dot q(q,p,t)} (\cancel {\frac {\partial \dot
+q^\alpha }{\partial q^\beta }dq^\beta }+\cancel {\frac {\partial \dot q^\alpha }{\partial p_\beta }dp_\beta }+\cancel {\frac {\partial \dot q^\alpha }{\partial
+t}dt})-\frac {\partial L}{\partial t}\Big |_{\dot q(q,p,t)}dt.
+\end{multline}
+It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{23}\)</span>
+
+<!--
+
+                                       BH                        BH      BL ˇˇ            BH    BL ˇˇ
+                                           “ q9α | 9qpq,p,tq ,      α
+                                                                      “ ´ αˇ          ,       “´ ˇ           .                                             (6.24)                                                                      --><a id="eq:307"></a><!--
+                                       Bpα                       Bq      Bq 9qpq,p,tq      Bt   Bt 9qpq,p,tq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:307} \frac {\partial H}{\partial p_\alpha }=\dot q^\alpha |_{\dot q(q,p,t)},\quad \frac {\partial H}{\partial q^\alpha } =-\frac {\partial L}{\partial
+q^\alpha }\Big |_{\dot q(q,p,t)},\quad \frac {\partial H}{\partial t} = -\frac {\partial L}{\partial t}\Big |_{\dot q(q,p,t)}.
+\end{equation}
+
+</p>
+
+<p>
+We already know that the first equation, which is equivalent to the first set of Hamilton’s equations in <span class="textup">(<a href="node-6.html#eq:305">6.22</a>)</span> is the inverse to the definition of the canonical
+momenta in <span class="textup">(<a href="node-6.html#eq:297">6.14</a>)</span>. When injecting this and the second relation in the second set of Hamilton’s equations, and expressing the equations in terms of \(q,\dot
+q,t\), one finds
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{24}\)</span>
+
+<!--
+
+                                                            d BL        BL    δL
+                                                              p      q “ α ðñ      “ 0.                                                                    (6.25)                                                                      --><a id="eq:308"></a><!--
+                                                            dt B q9α    Bq    δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:308} \frac {d}{dt}(\frac {\partial L}{\partial \dot q^\alpha })=\frac {\partial L}{\partial q^\alpha }\iff \frac {\delta L}{\delta q^\alpha }=0.
+\end{equation}
+
+</p>
+
+<p>
+<span class="theoremendmark">&#x25A1;</span>
+</p>
+<!--
+...... section Poisson brackets ......
+-->
+<h4 id="autosec-80"><span class="sectionnumber">6.3&#x2003;</span>Poisson brackets</h4>
+<a id="mechanics-autopage-80"></a>
+
+
+<a id="sec:poisson-brackets"></a>
+
+<p>
+By definition, phase space is the \(2n\) dimensional space with local coordinates given by the so-called canonical variables \((q^\alpha ,p_\alpha )\), \(\alpha =1,\dots n\). Consider then phase space functions with an additional explicit
+dependence on time, \(F(q^\alpha ,p_\alpha ,t)\). For natural trajectories, that is to say, when Hamilton’s equations <span class="textup">(<a href="node-6.html#eq:305">6.22</a>)</span> are satisfied, the time
+evolution of such a function is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{25}\)</span>
+
+<!--
+
+
+                                                                                                            dF  BF       BF        BF    BF BH     BF BH      BF
+                                                                                                               “ α q9α `     p9α `    “ α       ´           `
+                                                                                                            dt  Bq       Bpα       Bt   Bq Bpα    Bpα Bq α    Bt
+                                                                                                                                                     (6.26)                                                                 --><a id="eq:312"></a><!--
+                                                                                                                                                 BF
+                                                                                                                                      “ tF, Hu `    .
+                                                                                                                                                 Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:312} \begin{split} \frac {d F}{dt}=\frac {\partial F}{\partial q^\alpha }\dot q^\alpha +\frac {\partial F}{\partial p_\alpha }\dot p_\alpha +\frac {\partial
+F}{\partial t} &amp;= \frac {\partial F}{\partial q^\alpha }\frac {\partial H}{\partial p_\alpha }- \frac {\partial F}{\partial p_\alpha }\frac {\partial H}{\partial
+q^\alpha } +\frac {\partial F}{\partial t}\\ &amp;= \{F,H\}+\frac {\partial F}{\partial t}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+where the Poisson bracket of two phase space functions \(F_1,F_2\) (that may depend explicitly on time) is defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{26}\)</span>
+
+<!--
+
+
+                                                                        BF1 BF2    BF1 BF2
+                                                         tF1 , F2 u “            ´          .                                                                 (6.27)                                                        --><a id="eq:313"></a><!--
+                                                                        Bq α Bpα   Bpα Bq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:313} \boxed {\{F_1,F_2\}=\frac {\partial F_1}{\partial q^\alpha }\frac {\partial F_2}{\partial p_\alpha }- \frac {\partial F_1}{\partial p_\alpha }\frac
+{\partial F_2}{\partial q^\alpha }}.
+\end{equation}
+
+</p>
+
+<p>
+This definition implies in particular the “canonical Poisson brackets”
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{27}\)</span>
+
+<!--
+
+
+                                            tq α , q β u “ 0 “ tpα , pβ u,     tq α , pβ u “ δβα “ ´tpβ , q α u.                                              (6.28)                                                        --><a id="eq:314"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:314} \{q^\alpha ,q^\beta \}=0=\{p_\alpha ,p_\beta \},\quad \{q^\alpha ,p_\beta \}=\delta ^\alpha _\beta =-\{p_\beta ,q^\alpha \}.
+\end{equation}
+
+</p>
+
+<p>
+Furthermore, in these terms, Hamilton’s equations become
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{28}\)</span>
+
+<!--
+
+
+                                                          q9α “ tq α , Hu,       p9α “ tpα , Hu.                                                              (6.29)                                                        --><a id="eq:316"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:316} \dot q^\alpha =\{q^\alpha ,H\},\quad \dot p_\alpha =\{p_\alpha ,H\}.
+\end{equation}
+
+</p>
+
+<p>
+The Poisson bracket satisfies
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> skew-symmetry
+</p>
+<span class="hidden"> \(\seteqnumber{0}{6.}{29}\)</span>
+<!--
+
+                                                                   tF, Gu “ ´tG, F u,                                                                         (6.30)                                                        --><a id="eq:317"></a><!--
+-->
+<p>
+
+\begin{equation}
+\label {eq:317} \{F,G\}=-\{G,F\},
+\end{equation}
+
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> right (and as a consequence of skew-symmetry, also left) linearity
+</p>
+<span class="hidden"> \(\seteqnumber{0}{6.}{30}\)</span>
+<!--
+
+                                           tF, c1 G1 ` c2 G2 u “ c1 tF, G1 u ` c2 tF, G2 u,           c1 , c2 P R.                                            (6.31)                                                        --><a id="eq:318"></a><!--
+-->
+<p>
+
+\begin{equation}
+\label {eq:318} \{F,c_1 G_1+c_2G_2\}=c_1\{F,G_1\}+c_2\{F,G_2\},\quad c_1,c_2\in \mathbb R.
+\end{equation}
+
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> right (and as a consequence of skew-symmetry, also left) Leibniz rule
+</p>
+<span class="hidden"> \(\seteqnumber{0}{6.}{31}\)</span>
+<!--
+
+                                                         tF, GKu “ tF, GuK ` GtF, Ku.                                                                         (6.32)                                                        --><a id="eq:319"></a><!--
+-->
+<p>
+
+\begin{equation}
+\label {eq:319} \{F,GK\}=\{F,G\}K+G\{F,K\}.
+\end{equation}
+
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Jacobi identity
+</p>
+<span class="hidden"> \(\seteqnumber{0}{6.}{32}\)</span>
+<!--
+
+
+                                                                                                                  tF, tG, Kuu ` tG, tK, F uu ` tK, tF, Guu “ 0
+                                                                                                                                                                         (6.33)                                             --><a id="eq:320"></a><!--
+                                                                                                                    ðñ tF, tG, Kuu “ tG, tF, Kuu ` ttF, Gu, Ku,
+-->
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:320} &amp; \{F,\{G,K\}\}+\{G,\{K,F\}\}+\{K,\{F,G\}\}=0\\ &amp; \iff \{F,\{G,K\}\}=\{G,\{F,K\}\}+\{\{F,G\},K\}, \end {split}
+\end{equation}
+
+</p>
+<p>
+where the equivalence of the two expressions relies on the skew-symmetry of the Poisson bracket.
+</p>
+</li>
+</ul>
+
+<p>
+The proof of all of these properties, except for the Jacobi identity, follows directly from the definition. For the Jacobi identity, the proof may be streamlined by introducing a collective notation for the phase space coordinates,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{33}\)</span>
+
+<!--
+
+
+                                                                z A “ pq α , pα q,     A “ 1, . . . , 2n,                                                                (6.34)                                             --><a id="eq:321"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:321} z^A=(q^\alpha ,p_\alpha ),\quad A=1,\dots ,2n,
+\end{equation}
+
+</p>
+
+<p>
+together with the matrix,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{34}\)</span>
+
+<!--
+
+                                                          ˆ           ˙                ˆ                          ˙
+                                                               0    1                         0           δ A,B´n
+                                                     ω“                 ,     ω AB “                                ,                                                    (6.35)                                             --><a id="eq:322"></a><!--
+                                                              ´1    0                      ´δ A´n,B           0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:322} \omega =\begin{pmatrix} 0 &amp; \mathbb 1\\ -\mathbb 1 &amp; 0 \end {pmatrix},\quad \omega ^{AB}=\begin{pmatrix} 0 &amp; \delta ^{A,B-n}\\ -\delta
+^{A-n,B} &amp; 0 \end {pmatrix},
+\end{equation}
+
+</p>
+
+<p>
+which is skew-symmetric, \(\omega ^{AB}=-\omega ^{BA}\), and whose inverse is the transposed matrix with components denoted by \(\omega _{AB}\), \(\omega ^{AB}\omega _{BC}=\delta ^A_C\), which is also
+skew-symmetric \(\omega _{AB}=-\omega _{BA}\). In these terms, Poisson brackets can be written compactly as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{35}\)</span>
+
+<!--
+
+                                                                     BF AB BG
+                                                        tF, Gu “          ω      ,          tz A , z B u “ ω AB ,                                                        (6.36)                                             --><a id="eq:323"></a><!--
+                                                                     Bz A   Bz B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:323} \{F,G\}=\frac {\partial F}{\partial z^A}\omega ^{AB}\frac {\partial G}{\partial z^B},\quad \{z^A,z^B\}=\omega ^{AB},
+\end{equation}
+
+</p>
+
+<p>
+while Hamilton’s equation become
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{36}\)</span>
+
+<!--
+
+                                                                                                BH
+                                                                    z9 A “ tz A , Hu “ ω AB          .                                                                   (6.37)                                             --><a id="eq:324"></a><!--
+                                                                                                Bz B
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:324} \dot z^A=\{z^A,H\}=\omega ^{AB}\frac {\partial H}{\partial z^B}.
+\end{equation}
+
+</p>
+
+<p>
+To each phase space function \(F\), one may associated the first order differential operator
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{37}\)</span>
+
+<!--
+
+                                                                              B               BF AB
+                                                               vF “ vFB           ,   vFB “        ω ,                                                                   (6.38)                                             --><a id="eq:325"></a><!--
+                                                                             Bz B             Bz A
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:325} v_F=v_F^B\frac {\partial }{\partial z^B},\quad v_F^B=\frac {\partial F}{\partial z^A}\omega ^{AB},
+\end{equation}
+
+</p>
+
+<p>
+which may also be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{38}\)</span>
+
+<!--
+
+
+                                                                              vF “ tF, ¨u.                                                                               (6.39)                                             --><a id="eq:384"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:384} v_F=\{F,\cdot \}.
+\end{equation}
+
+</p>
+
+<p>
+In particular, one may write Poisson brackets as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{39}\)</span>
+
+<!--
+
+
+                                                                     tF, Gu “ vF G “ ´vG F.                                                                              (6.40)                                             --><a id="eq:326"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:326} \{F,G\}=v_F G=-v_G F.
+\end{equation}
+
+</p>
+
+<p>
+For the proof of the Jacobi identity, one starts by re-writing the second of <span class="textup">(<a href="node-6.html#eq:320">6.33</a>)</span> as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{40}\)</span>
+
+<!--
+
+
+                                                               vF pvG Kq ´ vG pvF Kq “ vtF,Gu K.                                                                         (6.41)                                             --><a id="eq:327"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:327} v_F(v_G K)-v_G(v_F K)=v_{\{F,G\}}K.
+\end{equation}
+
+</p>
+
+<p>
+Developing the left-hand side, one gets
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{41}\)</span>
+
+<!--
+
+
+                                                                                                            B     B BK          B B        BK
+                                                                                                         vFA  A
+                                                                                                                pvG     B
+                                                                                                                          q ´ vG     B
+                                                                                                                                       pvFA A q
+                                                                                                           Bz        Bz           Bz       Bz
+                                                                                                                 B                                  A
+                                                                                                            A BvG BK          A B    B 2
+                                                                                                                                        K 
+                                                                                                                                                B BvF BK      B A    B 2
+                                                                                                                                                                        K
+                                                                                                         “ vF A B `         vFvG A B ´ vG
+                                                                                                                                    
+                                                                                                                                                    B   A
+                                                                                                                                                          ´ vGvFB A
+                                                                                                               Bz Bz               Bz Bz          Bz Bz(6.42)      Bz Bz                                                    --><a id="eq:328"></a><!--
+                                                                                                           “ B BvG A           A‰
+                                                                                                                          B Bv F   BK
+                                                                                                         “ vF B ´ v G
+                                                                                                                Bz          Bz B Bz A
+                                                                                                           “ BF BC B BG DA                   BG       B BF          ‰ BK
+                                                                                                         “     B
+                                                                                                                 ω        C
+                                                                                                                            p D qω        ´ B ω BC C p D qω DA             .
+                                                                                                            Bz         Bz Bz                Bz       Bz Bz            Bz A
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:328} \begin{split} &amp;v_F^A\frac {\partial }{\partial z^A}(v_G^B\frac {\partial K}{\partial z^B})- v_G^B\frac {\partial }{\partial z^B}(v_F^A\frac
+{\partial K}{\partial z^A})\\&amp;=v_F^A\frac {\partial v^B_G}{\partial z^A}\frac {\partial K}{\partial z^B} +\cancel {v_F^Av_G^B\frac {\partial ^2 K}{\partial
+z^A\partial z^B}} -v_G^B\frac {\partial v^A_F}{\partial z^B}\frac {\partial K}{\partial z^A} -\cancel {v_G^Bv_F^A\frac {\partial ^2 K}{\partial z^B\partial z^A}}
+\\&amp;=\big [v_F^B\frac {\partial v^A_G}{\partial z^B}-v_G^B\frac {\partial v^A_F}{\partial z^B}\big ]\frac {\partial K}{\partial z^A}\\&amp;= \big [\frac {\partial
+F}{\partial z^B}\omega ^{BC}\frac {\partial }{\partial z^C}(\frac {\partial G}{\partial z^D})\omega ^{DA}- \frac {\partial G}{\partial z^B}\omega ^{BC}\frac {\partial
+}{\partial z^C}(\frac {\partial F}{\partial z^D})\omega ^{DA}\big ] \frac {\partial K}{\partial z^A}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+For the right hand side, one finds
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{42}\)</span>
+
+<!--
+
+
+
+                                                                                                    A          BK      B “ BF CD BG ‰ BA BK
+                                                                                                   vtF,Gu         A
+                                                                                                                    “ B        ω           ω
+                                                                                                               Bz     Bz Bz C       Bz D        Bz A
+                                                                                                                      “ B2 F        BG       BF          B2 G ‰       BK
+                                                                                                                    “    B   C
+                                                                                                                               ω CD D ` C ω CD     (6.43)B D ω BA A                                                         --><a id="eq:329"></a><!--
+                                                                                                                       Bz Bz       Bz        Bz        Bz Bz         Bz
+                                                                                                                      “ B2 F     BC BG DA         BF CB B 2 G            ‰ BK
+                                                                                                                    “    D   B
+                                                                                                                               ω       C
+                                                                                                                                         ω     `    C
+                                                                                                                                                      ω       D   B
+                                                                                                                                                                    ω DA        ,
+                                                                                                                       Bz Bz        Bz           Bz         Bz Bz          Bz A
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:329} v_{\{F,G\}}^A\frac {\partial K}{\partial z^A}&amp;=\frac {\partial }{\partial z^B}\big [\frac {\partial F}{\partial z^C}\omega ^{CD}\frac
+{\partial G}{\partial z^D}\big ]\omega ^{BA}\frac {\partial K}{\partial z^A} \\&amp;=\big [\frac {\partial ^2 F}{\partial z^B\partial z^C}\omega ^{CD}\frac {\partial
+G}{\partial z^D}+\frac {\partial F}{\partial z^C}\omega ^{CD}\frac {\partial ^2 G}{\partial z^B\partial z^D}\big ]\omega ^{BA}\frac {\partial K}{\partial
+z^A}\\&amp;=\big [\frac {\partial ^2 F}{\partial z^D\partial z^B}\omega ^{BC}\frac {\partial G}{\partial z^C}\omega ^{DA}+\frac {\partial F}{\partial z^C}\omega
+^{CB}\frac {\partial ^2 G}{\partial z^D\partial z^B}\omega ^{DA}\big ]\frac {\partial K}{\partial z^A} , \end {split}
+\end{equation}
+
+</p>
+
+<p>
+which agrees with the previous equation when using skew-symmetry of \(\omega ^{BC}\) in the first term of the right hand side.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

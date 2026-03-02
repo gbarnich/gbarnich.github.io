@@ -1,0 +1,1683 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Constrained systems and d’Alembert principle</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-11"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Constrained systems and d’Alembert principle ......
+-->
+<h3 id="autosec-11">Chapter&nbsp;<span class="sectionnumber">2&#x2003;</span>Constrained systems and d’Alembert principle</h3>
+
+<a id="mechanics-autofile-2"></a>
+
+<p>
+The chapter starts with a description of holonomic constraints on the trajectories of point particles. Real displacements are distinguished from virtual (instantaneous) displacements. D’Alembert’s theorem as an alternative equivalent formulation of
+Newtonian mechanics is stated and proved. For non-holonomic constraints, the same is achieved through d’Alembert’s theorem. A criterion to distinguish holonomic from non-holonomic constraints is provided. This chapter is based on [<a
+href="node-14.html#LWR-ht-cite.0@Spindel2002">4</a>], chapters 1.1, 1.2, 1.3.
+</p>
+<!--
+...... section Holonomic constraints ......
+-->
+<h4 id="autosec-12"><span class="sectionnumber">2.1&#x2003;</span>Holonomic constraints</h4>
+<a id="mechanics-autopage-12"></a>
+
+
+<a id="sec:holon-constr"></a>
+
+<p>
+Consider \(\mathcal N\) particles moving in space \(\mathbb R^3\), with coordinates are denoted by \(x_i^\alpha \), \(i=1,\dots , \mathcal N\), \(\alpha =1,2,3\). Alternatively, we can label them by \(x^a\), with
+\(a=1,\dots ,3\mathcal N\). We assume that they are submitted to \(r\) constraints of the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{0}\)</span>
+
+<!--
+
+
+                                                                                                              Gm pxα
+                                                                                                                   i , tq “ 0.                                                                       (2.1)--><a id="eq:54"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:54} G_m(x^\alpha _i,t)=0.
+\end{equation}
+
+</p>
+
+<p>
+Such constraints that only involve the positions but not the velocitites of the particles are called holonomic. As before, we assume regularity conditions: the rank of matrix \(\frac {\partial G_m}{\partial x^\alpha _i}\) is maximal for
+all values of \(t\). When the constraints do not depend explicitly on time, they are called scleronomic, if they do, they are called rheonomic.
+</p>
+
+<figure id="autoid-1" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="constraint.png" target="_blank" ><img
+   src="constraint.png"
+   style="
+   width:260pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;2.1: A particle in \(\mathbb R^3\) constrained to a 2-dimensional surface \(\Sigma \). Source: Script by N.&nbsp;Boulanger
+
+</div>
+
+<a id="fig:constraint"></a>
+
+</div>
+
+</figure>
+
+<p>
+During a motion, the particles are assumed to remain on the surface defined by the constraints. If this motion \(dx^\alpha _i\) takes place during an infinitesimally small time interval \(dt\), this means that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{1}\)</span>
+
+<!--
+
+                                                                                                                                   BGm      BGm
+                                                                                                                    dGm “ dxα
+                                                                                                                            i        α ` dt     “ 0.                                                                (2.2)--><a id="eq:55"></a><!--
+                                                                                                                                   Bxi       Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:55} dG_m=dx^\alpha _i\frac {\partial G_m}{\partial x^\alpha _i}+dt\frac {\partial G_m}{\partial t}=0.
+\end{equation}
+
+</p>
+
+<p>
+In other words, the constraints are constraints on the trajectories of the particles and give rise by differentiation with respect to time to constraints on the velocities,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{2}\)</span>
+
+<!--
+
+                                                                                                                                 BGm   BGm
+                                                                                                                          x9 α
+                                                                                                                             i     α `     “ 0,                                                                     (2.3)--><a id="eq:56"></a><!--
+                                                                                                                                 Bxi    Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:56} \dot x^\alpha _i\frac {\partial G_m}{\partial x^\alpha _i}+\frac {\partial G_m}{\partial t}=0,
+\end{equation}
+
+</p>
+
+<p>
+where, for a trajectory \(x^\alpha _i(t)\), the notation \(\dot x^\alpha _i=\frac {dx^\alpha _i}{dt}\) and \(\ddot x^\alpha _i=\frac {d^2 x^\alpha _i}{(dt)^2}\) is used.
+</p>
+
+<p>
+Consider two trajectories \(x^\alpha _i(t)\) and \(\tilde x^\alpha _i(t)\). What we will be interested in below is (instantaneous) virtual displacements i.e., the difference of these trajectories \(\Delta x^\alpha _i(t)=\tilde
+x^\alpha _i(t)-x^\alpha _i(t)\) at fixed times \(t\). It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{3}\)</span>
+
+<!--
+
+
+                                                                                          dxα
+                                                                                            i ptq           xα pt ` ϵq ` xα
+                                                                                                                          i ptq         x̃α pt ` ϵq ´ xα              α        α
+                                                                                                                                                       i pt ` ϵq ´ px̃i ptq ´ xi ptqq
+                                                                                      ∆           “ ∆ lim i                     “ lim i
+                                                                                            dt        ϵÑ0             ϵ            ϵÑ0
+                                                                                                                                (2.4)                         ϵ                                                        --><a id="eq:57"></a><!--
+                                                                                                                   α
+                                                                                                    dx̃α ptq    dx   ptq    d
+                                                                                                  “ i        ´ i         “ ∆xα   i ptq.
+                                                                                                       dt          dt      dt
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \Delta \frac {d x^\alpha _i(t)}{dt}&amp;=\Delta \lim _{\epsilon \to 0}\frac {x^\alpha _i(t+\epsilon )+x^\alpha _i(t)}{\epsilon }=\lim _{\epsilon \to
+0}\frac {\tilde x^\alpha _i(t+\epsilon )-x^\alpha _i(t+\epsilon )-(\tilde x^\alpha _i(t)-x^\alpha _i(t))}{\epsilon }\\ &amp;=\frac {d\tilde x^\alpha _i(t)}{dt}-\frac
+{dx^\alpha _i(t)}{dt}=\frac {d}{dt} \Delta x^\alpha _i(t)\label {eq:57}. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+More specifically we will be interested in infinitesimal displacements \(\delta x^\alpha _i\) of this type that are compatible with the constraints,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{4}\)</span>
+
+<!--
+
+                                                              BGm
+                                                        δxα
+                                                          i       « 0.                                                             (2.5)                                                                               --><a id="eq:58"></a><!--
+                                                              Bxα
+                                                                i
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:58} \delta x^\alpha _i\frac {\partial G_m}{\partial x^\alpha _i}\approx 0.
+\end{equation}
+
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-14"></a>
+<span class="amsthmnameplain">Lemma</span><span class="amsthmnumberplain"> <span class="textup">3</span></span>. </span> <a id="work"></a> The elementary work \(\cancel {\delta }
+W\) of the reaction forces due to the constraints vanishes for all infinitesimal virtual displacements that are compatible with the constraints if and only if the reaction forces are a combination of the gradients of the constraints,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{5}\)</span>
+
+<!--
+
+
+                                               i                              BGm
+                                        δW “ Rα δxα         i
+                                                   i « 0 ðñ Rα « µ
+                                                                  m
+                                                                                  ,                                           (2.6)                                                                                            --><a id="eq:59"></a><!--
+                                                                              Bxα
+                                                                                i
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:59} \cancel {\delta } W=R^i_\alpha \delta x^\alpha _i\approx 0 \iff R_\alpha ^i\approx \mu ^m\frac {\partial G_m}{\partial x^\alpha _i},
+\end{equation}
+
+
+</p>
+
+<p>
+for some \(\mu ^m(x^\alpha _i,t)\).
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Indeed, except for the interpretation in terms of work and forces, this follows directly from the previous lemma. The notation \(\cancel {\delta } W\) means that this elementary work is not necessarily the variation of a function. The geometric
+interpretation is that the reaction forces are orthogonal to the constraints. (For each \(m\), the gradient \(\frac {\partial G_m}{\partial x^\alpha _i}\) is a vector that is orthogonal to the tangent vectors of the surface defined by
+\(G_m=0\).)
+</p>
+
+<p>
+In what follows, we limit ourselves (almost) exclusively to such constraints, i.e., to constraints whose reaction forces do not do any work during a virtual displacement. In particular this means that there can be no friction due to these constraints. Such
+constraints are called ideal.
+</p>
+<!--
+...... section d’Alembert’s theorem ......
+-->
+<h4 id="autosec-15"><span class="sectionnumber">2.2&#x2003;</span>d’Alembert’s theorem</h4>
+<a id="mechanics-autopage-15"></a>
+
+
+<a id="sec:dalembert-theorem"></a>
+
+<p>
+The dynamics of the \(\mathcal N\) particles is governed by Newton’s equations,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{6}\)</span>
+
+<!--
+
+
+                                                     :α
+                                                mpiq x      α    α
+                                                       i “ Fi ` Ri ,                                                 (2.7)                                                                                       --><a id="eq:113"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:113} m_{(i)}\ddot x^\alpha _i=F^\alpha _i+R^\alpha _i,
+\end{equation}
+
+</p>
+
+<p>
+where the parenthesis around the index \(i\) means that there is no summation, and where \(F^\alpha _i\) are the components of the applied forces acting on the \(i\)th particles, while \(R^\alpha _i\) are the reaction forces due to the constraints,
+assumed to be ideal. The latter keep the particles confined to the constraint surface.
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-16"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">1</span></span><span class="amsthmnoteplain"> (d’Alembert)</span>. </span>
+Newton’s equation for a system of point particles subjected to ideal constraints are equivalent to the condition that the elementary work of the sum of the applied forces and of the forces of inertia (\(-m_{(i)}\ddot x^\alpha _i\)) vanishes for all
+infinitesimal virtual displacements compatible with the constraints,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{7}\)</span>
+
+<!--
+
+
+
+                                                pFiα ´ mpiq x
+                                                            :α     α
+                                                              i qδxi « 0 .                                           (2.8)                                                                                       --><a id="eq:114"></a><!--
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:114} \boxed {(F^\alpha _i-m_{(i)}\ddot x^\alpha _i)\delta x^{\alpha }_i\approx 0}.
+\end{equation}
+
+
+</p>
+
+<p>
+
+
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+The theorem states that Newton’s equations <span class="textup">(<a href="node-2.html#eq:113">2.7</a>)</span>, together with the fact that the reaction forces associated to ideal constraints are of the form \(R^i_\alpha
+\approx \mu ^m\frac {\partial G_m}{\partial x^\alpha _i}\) on account of equation <span class="textup">(<a href="node-2.html#eq:59">2.6</a>)</span> of Lemma <a
+href="node-2.html#work">3</a> are equivalent to <span class="textup">(<a href="node-2.html#eq:114">2.8</a>)</span> when the constraints <span class="textup">(<a
+href="node-2.html#eq:54">2.1</a>)</span> hold, and when limiting oneself to compatible infinitesimal virtual displacements, <span class="textup">(<a href="node-2.html#eq:58">2.5</a>)</span>. That the
+condition is sufficient (\(\Longrightarrow \)) follows by contracting <span class="textup">(<a href="node-2.html#eq:113">2.7</a>)</span> with \(\delta x^\alpha _i\) and using <span class="textup">(<a
+href="node-2.html#eq:59">2.6</a>)</span> together with <span class="textup">(<a href="node-2.html#eq:58">2.5</a>)</span> to conclude that <span class="textup">(<a
+href="node-2.html#eq:114">2.8</a>)</span> holds. That the condition is necessary \((\Longleftarrow \)) follows because <span class="textup">(<a href="node-2.html#eq:54">2.1</a>)</span>, <span
+class="textup">(<a href="node-2.html#eq:58">2.5</a>)</span> together with <span class="textup">(<a href="node-2.html#eq:114">2.8</a>)</span> imply, as in lemma <a
+href="node-2.html#work">3</a>, that \(F^\alpha _i-m_{(i)}\ddot x^\alpha _i\approx -\mu ^m\frac {\partial G_m}{\partial x^\alpha _i}\), for some \(\mu ^m\), which are Newton’s equation <span
+class="textup">(<a href="node-2.html#eq:113">2.7</a>)</span>, together with <span class="textup">(<a href="node-2.html#eq:59">2.6</a>)</span>.
+</p>
+<!--
+...... section Principle of virtual work ......
+-->
+<h4 id="autosec-17"><span class="sectionnumber">2.3&#x2003;</span>Principle of virtual work</h4>
+<a id="mechanics-autopage-17"></a>
+
+
+<a id="sec:princ-virt-work"></a>
+
+<p>
+If one uses d’Alembert’s theorem in the particular case of a system at equilibrium, the accelerations vanish, \(\ddot x^\alpha _i=0\), and the theorem reduces to the
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-18"></a>
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">2</span></span><span class="amsthmnoteplain"> (Principle of virtual work)</span>.
+</span> The virtual work done by the applied forces that keep a system in equilibrium are zero.
+</p>
+
+</li>
+
+</ul>
+
+</div>
+<!--
+...... subsection Worked Exercice 1: The Lever ......
+-->
+<h5 id="autosec-19"><span class="sectionnumber">2.3.1&#x2003;</span>Worked Exercice 1: The Lever</h5>
+<a id="mechanics-autopage-19"></a>
+
+
+<p>
+Using the principal of virtual work, find the equilibrium position of a horizontal lever of fulcrum \(O\), with a downward vertical force of modulus \(A\) at a distance \(a\) of \(O\) to the left and a downward vertical force of modulus \(B\) at a distance \(b\)
+to the right of \(O\). Hint: The equilibrium condition links \(A,B,a,b\). Relate the vertical displacements of the extremities \(\delta s_A\) and \(\delta s_B\) to the rotation angle \(\delta \varphi \) (see figure).
+</p>
+
+<p>
+Solution: the condition that the virtual work of the applied forces should vanish is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{8}\)</span>
+
+<!--
+
+
+                                   ⃗ ¨ ⃗δsA ` B
+                                   A          ⃗ ¨ ⃗δsB “ 0 ðñ AδsA ` BδsB “ 0,                                              (2.9)                                                                                            --><a id="eq:123"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:123} \vec A\cdot \vec \delta s_A+\vec B\cdot \vec \delta s_B=0\iff A\delta s_A+B\delta s_B=0,
+\end{equation}
+
+</p>
+
+<p>
+Furthermore \(\delta s_A=-a\delta \varphi \), \(\delta s_B=b\delta s_B\). Hence
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{9}\)</span>
+
+<!--
+
+
+                                       p´Aa ` Bbqδφ “ 0, @δφ ùñ Aa “ Bb .                                                  (2.10)                                                                                            --><a id="eq:137"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:137} (-Aa+Bb)\delta \varphi =0,\forall \delta \varphi \Longrightarrow \boxed {Aa=Bb}.
+\end{equation}
+
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:290pt ; ">
+
+<a id="mechanics-autopage-21"></a>
+
+<p>
+
+<a href="levier.jpg" target="_blank" ><img
+   src="levier.jpg"
+   style="
+   width:156pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-2" ></a >
+Figure&nbsp;2.2: Lever. Source: Sommerfeld Mechanics, chapter II.9
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<!--
+...... subsection Worked Exercice 2: Block and Tackle (Palan) ......
+-->
+<h5 id="autosec-22"><span class="sectionnumber">2.3.2&#x2003;</span>Worked Exercice 2: Block and Tackle (Palan)</h5>
+<a id="mechanics-autopage-22"></a>
+
+
+<p>
+In a tackle with \(n\) pulleys at the fixed upper end and \(n\) pulleys at the moving lower end lower, let \(Q\) be the modulus of the weight force that one wishes to lift, and \(P\) the modulus of the lifting force applied at the to the other end of the rope. In
+a virtual displacement, let \(\delta p\) be the displacement of the end of the rope and \(-\delta q\) the displacement of the load (which is negative if \(\delta p\) is positive, see figure.
+</p>
+<ul class="enumerate" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">1.</span> When taking the tackle as an ideal system without friction, what does the principle of virtual work imply ?
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">2.</span> If you lift the load by \(\delta q\), each of the \(2n\) lengths of rope between the pulleys is shortened by \(\delta q\).
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">3.</span> What is the relation between \(\delta p\) and \(\delta q\) ?
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">4.</span> Find the link between \(Q,P\) and the number of pulleys \(n\) at the upper and lower end of the tackle to maintain the load suspended.
+</p>
+</li>
+</ul>
+
+<p>
+Solution:
+</p>
+
+<p>
+Application of the principle:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{10}\)</span>
+
+<!--
+
+
+                                                      P δp ´ Qδq “ 0.                                                         (2.11)                                                                                             --><a id="eq:4"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:4} P\delta p-Q\delta q=0.
+\end{equation}
+
+</p>
+
+<p>
+For 1 pulley at both the upper and the lower end, if one lifts by \(\delta q\), each of the 2 pieces of rope is shortened by \(\delta q\) so that \(\delta p=2\delta q\).
+</p>
+
+<p>
+For 2 pulleys at both the upper and the lower end, if one lifts by \(\delta q\), each of the 4 pieces of rope is shortened by \(\delta q\) so that \(\delta p=4\delta q\).
+</p>
+
+<p>
+For \(n\) pulleys at both the upper and the lower end, \(\delta p= 2n \delta q\) and
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{11}\)</span>
+
+<!--
+
+
+                                                                               Q
+                                          p2nP ´ Qqδq “ 0, @δq ùñ P “             .                                           (2.12)                                                                                             --><a id="eq:3"></a><!--
+                                                                               2n
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:3} (2nP-Q)\delta q=0,\forall \delta q\Longrightarrow \boxed {P=\frac {Q}{2n}}.
+\end{equation}
+
+</p>
+
+<figure id="autoid-3" class="figure ">
+<div class="center">
+<div class="minipage" style="vertical-align:top ; justify-content:flex-start ; ">
+
+<a id="mechanics-autopage-24"></a>
+
+<p>
+
+<a href="palan.jpg" target="_blank" ><img
+   src="palan.jpg"
+   style="
+   width:87pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+(a) Block and tackle. Source: Sommerfeld, Mechanics, chapter II.9
+
+</div>
+
+<a id="fig:sub1"></a>
+
+<a id="sub@fig:sub1"></a>
+
+</div>
+<div class="minipage" style="vertical-align:top ; justify-content:flex-start ; ">
+
+<a id="mechanics-autopage-25"></a>
+
+<p>
+
+<a href="blockandtackle.png" target="_blank" ><img
+   src="blockandtackle.png"
+   style="
+   width:108pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+(b) Block and tackle. Source: Wikipedia
+
+</div>
+
+<a id="fig:sub2"></a>
+
+<a id="sub@fig:sub2"></a>
+
+</div>
+
+<a id="fig:test"></a>
+
+</div>
+
+</figure>
+<!--
+...... section Non-holonomic constraints ......
+-->
+<h4 id="autosec-26"><span class="sectionnumber">2.4&#x2003;</span>Non-holonomic constraints</h4>
+<a id="mechanics-autopage-26"></a>
+
+
+<a id="sec:non-holon-constr"></a>
+
+<p>
+Non-holonomic constraints are constraints on the velocities of point particles as in <span class="textup">(<a href="node-2.html#eq:56">2.3</a>)</span>, but that do not originate from holonomic constraints, i.e., from constraints
+on positions, through differentiation with respect to time.
+</p>
+<div class="center">
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:238pt ; ">
+
+<a id="mechanics-autopage-28"></a>
+
+<p>
+
+<a href="disk.jpg" target="_blank" ><img
+   src="disk.jpg"
+   style="
+   width:125pt;
+   "
+   class="inlineimage"
+   alt="(image)"
+></a>
+</p>
+
+<div class="figurecaption">
+<a id="autoid-4" ></a >
+Figure&nbsp;2.4: Source: Goldstein Classical Mechanics, chapter 1.3
+</div>
+</div>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+
+<p>
+As an example, consider a vertical disk or coin rolling without sliding on a horizontal plane, \(z=0\) in standard Cartesian coordinates. Let \((x_C,y_C,z_C)\) the coodinates of the center of the disk. Only \(x_C,y_C\) are relevant since \(z_C=a\),
+with \(a\) the radius of the disk. Let \(\phi \) be the angle of rotation of the disk starting from a fixed initial direction and \(\theta \) the angle made by \(\vec 1_x\) and the axes of rotation of the disk. Since the velocity \(\vec v\) of the center
+of the disk is normal to this axes, and lies in a plane of constant \(z\), it follows that the angle between \(\vec 1_x\) and \(\vec v\) is \(\theta -\frac {\pi }{2}\), so that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{12}\)</span>
+
+<!--
+
+                                             π                                      π
+                           xC “ v cospθ ´      q “ v sin θ,        yC “ v sinpθ ´     q “ ´v cos θ.                       (2.13)                                                                                            --><a id="eq:115"></a><!--
+                                             2                                      2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:115} x_C=v\cos (\theta -\frac {\pi }{2})=v\sin \theta ,\quad y_C=v\sin (\theta -\frac {\pi }{2})=-v\cos \theta .
+\end{equation}
+
+</p>
+
+<p>
+Futhermore, the velocity of a point on the edge of the disk is \(a\dot \phi \). This is the module of the velocity of the point of contact of the disk with the plane, and since there is no sliding this is also the velocity of the center of the disk,
+\(v=a\dot \phi \). By injecting into the previous relations, we thus get the following relations between velocitites for this motion
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{13}\)</span>
+
+<!--
+
+                                                "
+                                                     x9 C ´ a sin θϕ9 “ 0,
+                                                                                                                          (2.14)                                                                                            --><a id="eq:116"></a><!--
+                                                     y9 C ` a cos θϕ9 “ 0,
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:116} \left \{\begin{array}{l}\dot x_C-a\sin \theta \dot \phi =0,\\ \dot y_C +a \cos \theta \dot \phi =0, \end {array}\right .
+\end{equation}
+
+</p>
+
+<p>
+and the question is whether these constraints on velocities come from constraints on positions by differentiation with respect to time.
+</p>
+
+<p>
+More generally, consider \(r\) constraints that are at most linear in velocities \(\dot x^a\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{14}\)</span>
+
+<!--
+
+
+                                                     Kam x9 a ` K0m “ 0,                                                  (2.15)                                                                                            --><a id="eq:117"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:117} K^m_a \dot x^a +K^m_0=0,
+\end{equation}
+
+</p>
+
+<p>
+where \(K^m_a(x^b,t),K^m_0(x^b,t)\) are functions that depend on the coordinates \(x^a\), \(a=1,\dots ,n\) (which may or may not simply be the positions \(x^\alpha _i\) in Cartesian space of the \(\mathcal N\) particles), and
+possibly an explicit dependence on time \(t\). The question then is whether the relation on the velocities <span class="textup">(<a href="node-2.html#eq:117">2.15</a>)</span>, or any equivalent relation on the velocities
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{15}\)</span>
+
+<!--
+
+                                                           1             1
+                                              Λm m1 pKam x9 a ` K0m q “ 0,                                                (2.16)                                                                                            --><a id="eq:118"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:118} {\Lambda ^m}_{m&apos;}(K^{m&apos;}_a \dot x^a +K^{m&apos;}_0)=0,
+\end{equation}
+
+</p>
+
+<p>
+with \({\Lambda ^m}_{m&apos;}(x^b,t)\) an invertible matrix, can be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{16}\)</span>
+
+<!--
+
+                                                 1             1      BGm a BGm
+                                      Λm m1 pKam x9 a ` K0m q “           x9 `    .                                       (2.17)                                                                                            --><a id="eq:119"></a><!--
+                                                                      Bxa      Bt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:119} {\Lambda ^m}_{m&apos;}(K^{m&apos;}_a \dot x^a +K^{m&apos;}_0)=\frac {\partial G^m}{\partial x^a}\dot x^a+\frac {\partial G^m}{\partial t}.
+\end{equation}
+
+</p>
+
+<p>
+for \(r\) functions \(G^m(x^a,t)\). Since the velocities are arbitrary, this relation can be decomposed as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{17}\)</span>
+
+<!--
+
+                                                " BGm        m 1 m1
+                                                     Bxma “ Λ m Ka ,
+                                                     BG      m 1 m1                                                       (2.18)                                                                                            --><a id="eq:120"></a><!--
+                                                      Bt  “ Λ m K0 ,
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:120} \left \{\begin{array}{l} \frac {\partial G^m}{\partial x^a}={\Lambda ^m}_{m&apos;}K^{m&apos;}_a ,\\ \frac {\partial G^m}{\partial t}={\Lambda
+^m}_{m&apos;}K^{m&apos;}_0, \end {array}\right .
+\end{equation}
+
+</p>
+
+<p>
+In order to answer this question, it is useful to introduce \(x^A=(t,x^a)\), \(A=0,\dots , n\), so that the above \(n+1\) equations can be written in a unified way as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{18}\)</span>
+
+<!--
+
+                                                     BGm          m1
+                                                         “ Λm m1 KA  .                                                    (2.19)                                                                                            --><a id="eq:121"></a><!--
+                                                     BxA
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:121} \frac {\partial G^m}{\partial x^A}={\Lambda ^m}_{m&apos;}K^{m&apos;}_A.
+\end{equation}
+
+</p>
+
+<p>
+Necessary conditions<sup>1</sup> for the existence of such functions \(G^m\) is that mixed second derivatives of the right hand sides vanish,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{19}\)</span>
+
+<!--
+
+
+                           B 2 Gm    B 2 Gm  B        m1     B         m1
+                             A   B
+                                   “ B A ùñ A pΛm m1 KB  q “ B pΛm m1 KA  q.                                              (2.20)                                                                                            --><a id="eq:122"></a><!--
+                          Bx Bx     Bx Bx   Bx              Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:122} \frac {\partial ^2G_m}{\partial x^A\partial x^B}=\frac {\partial ^2G_m}{\partial x^B\partial x^A} \Longrightarrow \frac {\partial }{\partial
+x^A}({\Lambda ^m}_{m&apos;}K^{m&apos;}_B)=\frac {\partial }{\partial x^B}({\Lambda ^m}_{m&apos;}K^{m&apos;}_A).
+\end{equation}
+
+</p>
+
+<p>
+This is however not the condition that we need because it still contains the unknown functions \({\Lambda ^m}_{m&apos;}\). What we need is a condition on the functions \(K^m_A\) alone. A standard technical assumption on these functions, that
+we aasume to hold is that they are linearly independet in the following sense: if there exist some functions \(\lambda _m(x^B)\) such that \(\lambda _mK^m_A=0\) then necessarily \(\lambda _m=0\). The condition we need is then a
+consequence of the following theorem.
+</p>
+<div role="note" class="footnotes">
+
+<a id="mechanics-autopage-29"></a>
+
+<p>
+<sup>1</sup>&nbsp; It can in fact be shown, as done later in the course, that these conditions are also locally sufficient.
+</p>
+
+
+</div>
+
+
+
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker">
+<span class="amsthmnameplain">Theorem</span><span class="amsthmnumberplain"> <span class="textup">3</span></span><span class="amsthmnoteplain"> (Frobenius)</span>. </span> For
+linearly independent functions \(K^m_A\), the set of conditions
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{20}\)</span>
+
+<!--
+
+
+                                                       B                  r
+                                                 p        K m qK 1 . . . KA       “ 0,                                           (2.21)                                                                   --><a id="eq:124"></a><!--
+                                                     BxrA1 A2 A3            r`2 s
+
+
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:124} (\frac {\partial }{\partial x^{[A_1}}{K^m_{A_2}})K^1_{A_3}\dots K^r_{A_{r+2}]}=0,
+\end{equation}
+
+
+</p>
+
+<p>
+is necessary and sufficient for the existence of functions \({\Lambda ^m}_{m&apos;}(x^B)\) (invertible) and \(G^m(x^B)\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{21}\)</span>
+
+<!--
+
+
+                                                           BGm
+                                                               “ Λm m1 KA
+                                                                        m
+                                                                          .                                                      (2.22)                                                                   --><a id="eq:125"></a><!--
+                                                           BxA
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:125} \frac {\partial G^m}{\partial x^A}={\Lambda ^m}_{m&apos;}K^m_A.
+\end{equation}
+
+
+</p>
+
+<p>
+
+
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+In equation <span class="textup">(<a href="node-2.html#eq:124">2.21</a>)</span>, the square bracket denotes complete antisymmetrization of the indices \(A_1,\dots A_{r+2}\), divided by \((r+2)!\), the number of
+permutations of \(r+2\) objects. More explicitly,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{22}\)</span>
+
+<!--
+
+
+                           m     1          r              1       ÿ
+                                                                                     m        1             r
+              p        rA
+                          KA   qKA   . . . KA r`2 s
+                                                    “                p1q|σ| p Aσp1q KA      qKA      . . . KA      ,             (2.23)                                                                   --><a id="eq:126"></a><!--
+                  Bx     1   2     3
+                                                        pr ` 2q! σPP         Bx        σp2q     σp3q          σr`2
+                                                                       r`2
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:126} (\frac {}{\partial x^{[A_1}}{K^m_{A_2}})K^1_{A_3}\dots K^r_{A_{r+2}]}=\frac {1}{(r+2)!}\sum _{\sigma \in P_{r+2}}(1)^{|\sigma |}(\frac {}{\partial
+x^{A_{\sigma (1)}}}{K^m_{A_{\sigma (2)}}})K^1_{A_{\sigma (3)}} \dots K^r_{A_{\sigma {r+2}}},
+\end{equation}
+
+</p>
+
+<p>
+where \(P_{r+2}\) denotes a permutations of \(r+2\) elements and \(|\sigma |=0\) if the permutation is even, while \(|\sigma |=1\) if the permutation is odd.
+</p>
+
+<p>
+Let us prove that these conditions are indeed necessary (\(\Longleftarrow \)). We start from
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{23}\)</span>
+
+<!--
+
+                                                          B BGm               r
+                                                0“p               qK 1 . . . KA       ,                                          (2.24)                                                                   --><a id="eq:127"></a><!--
+                                                        BxrA1 BxA2 A3           r`2 s
+
+
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:127} 0=(\frac {\partial }{\partial x^{[A_1}}\frac {\partial G^m}{\partial x^{A_2}})K^1_{A_3}\dots K^r_{A_{r+2}]},
+\end{equation}
+
+</p>
+
+<p>
+which holds because the second order derivatives \(\frac {{\partial }^2G^m}{\partial x^{A_1} \partial x^{A_2}}\) are symmetric in \(A_1,A_2\), so that, when completely antisymmetrizing in the right hand side of equation
+<span class="textup">(<a href="node-2.html#eq:127">2.24</a>)</span>, one finds always \(0\). Since we assume that <span class="textup">(<a href="node-2.html#eq:125">2.22</a>)</span> is true, we
+find by substitution
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{24}\)</span>
+
+<!--
+
+
+                                                                                                        B           m1
+                                                                                                 0“p        pΛm m1 KA      1
+                                                                                                                        qqKA   . . . KAr
+                                                                                                                                         r`2 s
+                                                                                                      BxrA1           2      3
+                                                                                                                                               (2.25)                                                     --><a id="eq:128"></a><!--
+                                                                                                        B           m1 1                                B  m1
+                                                                                                   “ p rA Λ m qKA2 KA3 . . . KAr`2 s ` Λm m1 p rA KA
+                                                                                                             m
+                                                                                                                1
+                                                                                                                                     r
+                                                                                                                                                            2
+                                                                                                                                                                1
+                                                                                                                                                              qKA 3
+                                                                                                                                                                           r
+                                                                                                                                                                    . . . KA r`2 s
+                                                                                                      Bx 1                                            Bx 1
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:128} 0&amp;=(\frac {\partial }{\partial x^{[A_1}}({\Lambda ^m}_{m&apos;} K^{m&apos;}_{A_2}))K^1_{A_3}\dots K^r_{A_{r+2}]}\\&amp;=(\frac
+{\partial }{\partial x^{[A_1}}{\Lambda ^m}_{m&apos;}) K^{m&apos;}_{A_2}K^1_{A_3}\dots K^r_{A_{r+2}]}+{\Lambda ^m}_{m&apos;}(\frac {\partial }{\partial x^{[A_1}}
+K^{m&apos;}_{A_2})K^1_{A_3}\dots K^r_{A_{r+2}]} \end {split}
+\end{equation}
+
+</p>
+
+<p>
+The first term on the last line vanishes because the antisymmetry in \(A_2,\dots A_{r+2}\) implies the antisymmetry in \(m&apos;,1,\dots ,r\), but \(m&apos;\) takes a value between \(1\) and \(r\) so that one of the values arises twice and
+a completely antisymmetric expression then vanishes. Equation <span class="textup">(<a href="node-2.html#eq:124">2.21</a>)</span> then follows because \({\Lambda ^m}_{m&apos;}\) is invertible.
+</p>
+
+<p>
+The proof that the condition is sufficient (\(\Longrightarrow \)) can be found in [<a href="node-14.html#LWR-ht-cite.0@Spindel2004">3</a>] or [<a
+href="node-14.html#LWR-ht-cite.0@Schutz1980">10</a>]. <span class="theoremendmark">&#x25A1;</span>
+</p>
+
+<p>
+In the particular case of the disk, we have
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{25}\)</span>
+
+<!--
+
+
+                                                                 xA “ pt, xC , yC , ϕ, θq,                                                  (2.26)                                                        --><a id="eq:129"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:129} x^A=(t,x_C,y_C,\phi ,\theta ),
+\end{equation}
+
+</p>
+
+<p>
+and we have two constraints, \(r=2\). More explicitly,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{26}\)</span>
+
+<!--
+
+
+
+                                                                                                   K01 “ 0,    K11 “ 1,   K21 “ 0,   K31 “ ´a sin θ “ ´a sin x4 ,      K41 “ 0,
+                                                                                                                                            (2.27)                                                        --><a id="eq:130"></a><!--
+                                                                                                      K02 “ 0,    K12 “ 0,    K22 “ 1, K31 “ a cos θ “ a cos x4 ,      K42 “ 0.
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:130} \begin{split} K^1_0=0,\quad K^1_1=1,\quad K^1_2=0,\quad K^1_3=-a\sin \theta =-a\sin x^4,\quad K^1_4=0,\\ K^2_0=0,\quad K^2_1=0,\quad K^2_2=1,\quad
+K^1_3=a\cos \theta =a\cos x^4,\quad K^2_4=0. \end {split}
+\end{equation}
+
+</p>
+
+<p>
+Let us show that the constraints are non-holonomic, i.e., that there is at least one of the conditions in <span class="textup">(<a href="node-2.html#eq:124">2.21</a>)</span> that is not satisfied. If we take \(m=1\), they become
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{27}\)</span>
+
+<!--
+
+                                                                   B
+                                                             p        K 1 qK 1 K 2 “ 0.                                                        (2.28)                                                     --><a id="eq:131"></a><!--
+                                                                 BxrA1 A2 A3 A4 s
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:131} (\frac {\partial }{\partial x^{[A_1}}{K^1_{A_2}})K^1_{A_3} K^2_{A_{4}]}=0.
+\end{equation}
+
+</p>
+
+<p>
+Choosing \(A_1=4,A_2=3,A_3=1,A_4=2\), one can check that only the first term in the complete antisymmetrization is non-vanishing, so that the result of the left hand side is given by \(\frac {1}{4!}(-a\cos x^4)\) which does not vanish.
+</p>
+<!--
+...... section d’Alembert’s principle ......
+-->
+<h4 id="autosec-30"><span class="sectionnumber">2.5&#x2003;</span>d’Alembert’s principle</h4>
+<a id="mechanics-autopage-30"></a>
+
+
+<a id="sec:dalembert-principle"></a>
+
+<p>
+In the proof of d’Alembert theorem, nothing crucially depended on the fact that the constraints were holonomic. It can thus be extended to non-holonomic ones (by the replacement \(\frac {\partial G^m}{\partial x^a}\rightarrow
+K^m_a\) in the proof). Suppose then that there are \(r\) non holonomic constraints
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{28}\)</span>
+
+<!--
+
+
+                                                          Kam x9 a ` K0m “ 0,                                                           (2.29)                                                  --><a id="eq:132"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:132} K^m_a \dot x^a+K^m_0=0,
+\end{equation}
+
+</p>
+
+<p>
+and consider infinitesimal virtual displacements \(\delta x^a\) that are compatible,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{29}\)</span>
+
+<!--
+
+
+                                                             Kam δxa “ 0.                                                               (2.30)                                                  --><a id="eq:133"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:133} K^m_a\delta x^a=0.
+\end{equation}
+
+</p>
+
+<p>
+d’Alembert’s principle then states that Newton’s equation
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{30}\)</span>
+
+<!--
+
+
+                                                              :a “ F a ` Ra ,
+                                                         mpaq x                                                                         (2.31)                                                  --><a id="eq:134"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:134} m_{(a)} \ddot x^a=F^a+R^a,
+\end{equation}
+
+</p>
+
+<p>
+together with the condition that the forces of reaction are of the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{31}\)</span>
+
+<!--
+
+
+                                                            Ra « λm Kam ,                                                               (2.32)                                                  --><a id="eq:135"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+R_a\approx \lambda _m K^m_a\label {eq:135},
+\end{equation}
+
+</p>
+
+<p>
+are equivalent to the condition that the sum of the applied forces and of the forces of inertia produce no work during any compatible infinitesimal virtual displacement \(\delta x^a\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{2.}{32}\)</span>
+
+<!--
+
+
+                                                       pF a ´ mpaq x
+                                                                   :a qδxa « 0.                                                         (2.33)                                                  --><a id="eq:136"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:136} (F^a-m_{(a)}\ddot x^a)\delta x^a\approx 0.
+\end{equation}
+
+</p>
+
+<p>
+Systems covered by d’Alembert’s theorem and principle are
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> systems of point particles that move on polished surfaces that are fixed or moving (holonomic constraints),
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> motions of solids with one point having a prescribed trajectory
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> sliding of solids on polished surfaces
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> rolling without sliding of solids on rough surfaces
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> fixed links between solids
+</p>
+</li>
+</ul>
+
+<p>
+What is not covered by the theorem and principle are constraints that involve friction or constraints that are expressed by inequalities.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

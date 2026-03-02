@@ -1,0 +1,1137 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Covariance of the Lagrangian formalism</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-81"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Covariance of the Lagrangian formalism ......
+-->
+<h3 id="autosec-81">Chapter&nbsp;<span class="sectionnumber">7&#x2003;</span>Covariance of the Lagrangian formalism</h3>
+
+<a id="mechanics-autofile-7"></a>
+<!--
+...... section Change of dependent variables ......
+-->
+<h4 id="autosec-82"><span class="sectionnumber">7.1&#x2003;</span>Change of dependent variables</h4>
+<a id="mechanics-autopage-82"></a>
+
+
+<a id="sec:change-depend-vari"></a>
+
+<p>
+Consider a non-singular change of variables of the generalized Lagrange coordinates,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{0}\)</span>
+
+<!--
+
+                                                                                       Bq α
+                                                    q α “ q α pq 1β , tq,     det p          q ‰ 0,                                                     (7.1)                                                        --><a id="chov"></a><!--
+                                                                                       Bq 1β
+
+-->
+
+<p>
+
+\begin{equation}
+q^\alpha =q^\alpha (q^{\prime \beta },t),\quad {\rm det}\ (\frac {\partial q^\alpha }{\partial q^{\prime \beta }})\neq 0,\label {chov}
+\end{equation}
+
+</p>
+
+<p>
+with inverse transformation denoted by \(q^{\prime \beta }=q^{\prime \beta }(q^\alpha ,t)\). The Lagrangian in the new coordinates is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{1}\)</span>
+
+<!--
+
+                                                                                  d
+                                             L1 pq 1 , q91 , tq “ Lpqpq 1 , tq,      qpq 1 , tq, tq :“ L|                                             (7.2)                                                         --><a id="eq:1a"></a><!--
+                                                                                  dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:1a} L&apos;(q&apos;,\dot q&apos;,t)=L(q(q&apos;,t),\frac {d}{dt} q(q&apos;,t),t):=L|
+\end{equation}
+
+</p>
+
+<p>
+where the bar means that one has done the change of variables inside the function, with \(\frac {d}{dt} q^\alpha (q^{\prime \beta },t)=\frac {\partial q^\alpha }{\partial q^{\prime \gamma }}\dot
+q^{\prime \gamma }+\frac {\partial q^\alpha }{\partial t}\).
+</p>
+
+<p>
+By direct computation one finds
+</p>
+<span class="hidden"> \(\seteqnumber{0}{7.}{2}\)</span>
+
+
+<!--
+
+
+
+  δL1    BL1   d BL1
+     1β
+        “ 1β ´
+  δq     Bq    dt B q91β
+                                                                                                                BL Bq α      BL ` B 2 q α γ 1       B2 qα ˘   d ` BL Bq α ˘
+                                                                                                            “       |      `      |            q
+                                                                                                                                               9 `          ´         |
+                                                                                                                Bq α Bq 1β   B q9α Bq 1β Bq 1γ     Bq 1β Bt   dt B q9α Bq 1β
+                                                                                                                                                                                   Bq α ” BL      d ` BL ˘ı
+                                                                                                                                                                               “              | ´          | .   (7.3)--><a id="eq:2e"></a><!--
+                                                                                                                                                                                   Bq 1β Bq α     dt B q9α
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:2e} \frac {\delta L&apos;}{\delta q^{\prime \beta }}=\frac {\partial L&apos;}{\partial q^{\prime \beta }}-\frac {d}{dt}\frac {\partial L&apos;}{\partial \dot
+q^{\prime \beta }}\\=\frac {\partial L}{\partial q^\alpha }|\frac {\partial q^\alpha }{\partial q^{\prime \beta }}+\frac {\partial L}{\partial \dot q^\alpha }|\big
+(\frac {\partial ^2 q^\alpha }{\partial q^{\prime \beta }\partial q^{\prime \gamma }} \dot q^{\gamma &apos;}+\frac {\partial ^2 q^\alpha }{\partial q^{\prime \beta
+}\partial t}\big )-\frac {d}{dt}\big (\frac {\partial L}{\partial \dot q^\alpha }|\frac {\partial q^\alpha }{\partial q^{\prime \beta }}\big )\\=\frac {\partial
+q^\alpha }{\partial q^{\prime \beta }} \Big [\frac {\partial L}{\partial q^\alpha }|-\frac {d}{dt}\big (\frac {\partial L}{\partial \dot q^\alpha }|\big )\Big ].
+\end{multline}
+Indeed, when \(\frac {d}{dt}\) in the last term of the first line hits \(\frac {\partial q^\alpha }{\partial q^{\prime \beta }}\) the previous term in the first line is cancelled. As a consequence, out of the second and third
+term of the first line, one only remains with \(\frac {d}{dt}\) that hits \(\frac {\partial L}{\partial \dot q^\alpha }|\).
+</p>
+
+<p>
+Furthermore,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{3}\)</span>
+
+<!--
+
+
+                                               d ` BL ˘      B2 L d                   B 2 L d2                B2 L       ` d BL ˘
+                                                       α
+                                                         | “ β α | q β pq 1γ , tq ` β α | 2 q β pq 1γ , tq `        α
+                                                                                                                      |“           |,                                          (7.4)                                --><a id="eq:3a"></a><!--
+                                               dt B q9      Bq B q9 dt             B q9 B q9 dt              BtB q9       dt B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:3a} \frac {d}{dt}\big (\frac {\partial L}{\partial \dot q^\alpha }|\big )=\frac {\partial ^2 L}{\partial q^{\beta }\partial \dot q^\alpha }|\frac
+{d}{dt}q^\beta (q^{\prime \gamma },t)+ \frac {\partial ^2 L}{\partial \dot q^{\beta }\partial \dot q^\alpha }|\frac {d^2}{dt^2}q^\beta (q^{\prime \gamma },t) +\frac
+{\partial ^2 L}{\partial t\partial \dot q^\alpha }|=\big (\frac {d}{dt}\frac {\partial L}{\partial \dot q^\alpha }\big )|,
+\end{equation}
+
+</p>
+
+<p>
+where \(f(q,\dot q,\ddot q,t)|=f\big (q(q&apos;,t),\frac {d}{dt}q(q&apos;,t),\frac {d^2}{dt^2}q(q&apos;,t),t\big )\). Hence,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{4}\)</span>
+
+<!--
+
+
+                                                                                           δL1    Bq α ` δL ˘
+                                                                                                 “ 1β         |.                                                               (7.5)                                --><a id="eq:4a"></a><!--
+                                                                                           δq 1β  Bq δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:4a} \boxed {\frac {\delta L&apos;}{\delta q^{\prime \beta }}=\frac {\partial q^\alpha }{\partial q^{\prime \beta }} \big (\frac {\delta L}{\delta q^{\alpha
+}}\big )|} .
+\end{equation}
+
+</p>
+
+<p>
+This equation captures the covariance of Euler-Lagrange equations under changes of Lagrange coordinates. The meaning is as follows. Suppose that \(\bar q^\alpha (t)\) is a natural trajectory, i.e., a solution to the Euler-Lagrange equations of
+motion,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{5}\)</span>
+
+<!--
+
+                                                                                        δL α         d
+                                                                                             pq̄ ptq, q̄ α ptq, tq “ 0.                                                            (7.6)                             --><a id="eq:5"></a><!--
+                                                                                        δq α         dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:5} \frac {\delta L}{\delta q^{\alpha }}(\bar q^\alpha (t),\frac {d}{dt} \bar q^\alpha (t), t)=0.
+\end{equation}
+
+</p>
+
+<p>
+If one changes variables, \(q^{\prime \beta }=q^{\prime \beta }(q^\alpha ,t)\), with inverse given in <span class="textup">(<a href="node-7.html#chov">7.1</a>)</span>, it follows that \(\bar
+q^{\prime \beta }(t)=q^{\prime \beta }(\bar q^\alpha (t),t)\) is a solution for the variational pinciple defined by \(L&apos;(q&apos;,\dot q&apos;,t)\). Indeed, <span class="textup">(<a
+href="node-7.html#eq:4a">7.5</a>)</span> is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{6}\)</span>
+
+<!--
+
+
+                                                               Bq 1β δL1 ` 1         d 1          d2 1           ˘ δL
+                                                                  α   1β
+                                                                          q  pq, tq,    q pq, tq,   2
+                                                                                                      q pq, tq, t “ α pq, 9q, q:, tq.                                              (7.7)                             --><a id="eq:6"></a><!--
+                                                               Bq δq                 dt           dt               δq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:6} \frac {\partial q^{\prime \beta }}{\partial q^\alpha }\frac {\delta L&apos;}{\delta q^{\prime \beta }}\big (q&apos;(q,t), \frac {d}{dt}q&apos;(q,t),\frac
+{d^2}{dt^2}q&apos;(q,t),t\big )=\frac {\delta L}{\delta q^\alpha }(q,\dot q,\ddot q,t).
+\end{equation}
+
+</p>
+
+<p>
+When evaluating at \(\bar q^\alpha (t)\), the RHS vanishes. The result that \(\frac {\delta L&apos;}{\delta q^{\prime \beta }}\) evaluated at \(\bar q^{\prime \beta }(t)\) vanishes then follows from invertibility
+of \(\frac {\partial q^{\prime \beta }}{\partial q^\alpha }\).
+</p>
+<!--
+...... section Change of the independent variable ......
+-->
+<h4 id="autosec-83"><span class="sectionnumber">7.2&#x2003;</span>Change of the independent variable</h4>
+<a id="mechanics-autopage-83"></a>
+
+
+<a id="sec:change-depend-vari-1"></a>
+
+<p>
+The action is a functional, it produces a number if one evaluates it on a trajectory,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{7}\)</span>
+
+<!--
+
+                                                                                              ż tf    ´     d       ¯
+                                                                                Srqs “            dt L qptq, qptq, t P R.                                                                                     (7.8)                              --><a id="eq:7"></a><!--
+                                                                                               ti           dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:7} S[q]=\int ^{t_f}_{t_i}dt\, L\Big (q(t),\frac {d}{dt} q(t),t\Big )\in \mathbb {R}.
+\end{equation}
+
+</p>
+
+<p>
+Under an arbitrary reparametrisation of time, \(t=t(t&apos;)\), with inverse denoted by \(t&apos;=t&apos;(t)\), one finds the same number provided that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{8}\)</span>
+
+<!--
+
+                                                                             ż t1 “t1 ptf q
+                                                                                                     dt ´       1     dt1 d       1        1
+                                                                                                                                              ¯
+                                                                   Srqs “                     dt1        L qptpt  qq,        qptpt  qq, tpt  q  .                                                             (7.9)                              --><a id="eq:8"></a><!--
+                                                                              t1 “t1 pti q           dt1              dt dt1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:8} S[q]=\int ^{t&apos;=t&apos;(t_f)}_{t&apos;=t&apos;(t_i)}dt&apos;\, \frac {dt}{dt&apos;} L\Big (q(t(t&apos;)),\frac {dt&apos;}{dt}\frac {d}{dt&apos;}
+q(t(t&apos;)),t(t&apos;)\Big ).
+\end{equation}
+
+</p>
+
+<p>
+This suggests that the Euler-Lagrange equations are covariant under \(t=t(t&apos;)\) and \(q^{\prime \alpha }(t&apos;)=q^\alpha (t(t&apos;))\) provided that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{9}\)</span>
+
+<!--
+
+                                                                       ´ dq 1           dt ´            dt1 d                   ¯
+                                                                     L1 q 1 , 1 , t1 q “ 1 L qptpt1 qq,        qptpt1
+                                                                                                                      qq, tpt1
+                                                                                                                               q  .                                                                         (7.10)                               --><a id="eq:9"></a><!--
+                                                                             dt         dt              dt dt1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:9} \boxed {L&apos;\Big (q&apos;,\frac {d q&apos;}{dt&apos;},t&apos;)=\frac {dt}{dt&apos;} L\Big (q(t(t&apos;)),\frac {dt&apos;}{dt}\frac {d}{dt&apos;}
+q(t(t&apos;)),t(t&apos;)\Big )}.
+\end{equation}
+
+</p>
+
+<p>
+with
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{10}\)</span>
+
+<!--
+
+                                                                             dq 1α   dq α          dt                dt
+                                                                                 1
+                                                                                   “      |t“tpt1 q 1 “ q9α |t“tpt1 q 1 .                                                                                  (7.11)                               --><a id="eq:10"></a><!--
+                                                                              dt      dt           dt                dt
+
+-->
+
+<p>
+
+\begin{equation}
+\frac {d q^{\prime \alpha }}{dt&apos;}=\frac {dq^\alpha }{dt}|_{t=t(t&apos;)}\frac {dt}{dt&apos;}=\dot q^{\alpha }|_{t=t(t&apos;)}\frac {dt}{dt&apos;}.                                                                                                   \label {eq:10}
+\end{equation}
+
+</p>
+
+<p>
+Consider first a simple example. If \(L=\frac 12 m \dot q^2\), \(\frac {\delta L}{\delta q}=0\iff \ddot q=0 \iff q(t)=vt + c\) with \(v,c\in \mathbb R\). Let \(t,t&apos;&gt;0\) and take \(t=\sqrt
+{t&apos;} \iff t&apos;=t^2\).
+</p>
+
+<p>
+It follows that \(\frac {dt&apos;}{dt}=2t=2\sqrt {t&apos;}\), and the solution becomes \(q&apos;(t&apos;)=v\sqrt {t&apos;}+c\). The new Lagrangian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{11}\)</span>
+
+<!--
+
+                                                                                     dt 1     dt1 dq 1 2    ? dq 1 2
+                                                                             L1 “          mp         q  “ m t1 p 1 q .                                                                                    (7.12)                               --><a id="eq:12"></a><!--
+                                                                                     dt1 2    dt dt1             dt
+
+-->
+
+<p>
+
+\begin{equation}
+L&apos;=\frac {dt}{dt&apos;}\frac 12 m (\frac {dt&apos;}{dt}\frac {dq&apos;}{dt&apos;})^2 =m\sqrt {t&apos;}(\frac {dq&apos;}{dt&apos;})^2\label {eq:12}.
+\end{equation}
+
+</p>
+
+<p>
+The new equations of motion are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{12}\)</span>
+
+<!--
+
+
+                                                   δL1    BL1     d BL1          d ´ ? 1 dq 1 ¯       1 dq 1        ? d2 q 1
+                                                        “      ´          1 “ ´     2m t        “ ´m ?         ´ 2m  t1 12 “ 0,                                                                            (7.13)                               --><a id="eq:11"></a><!--
+                                                   δq 1   Bq 1   dt1 B dq
+                                                                       dt1
+                                                                                dt1      dt1
+                                                                                                       t 1 dt1         dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:11} \frac {\delta L&apos;}{\delta q&apos;}=\frac {\partial L&apos;}{\partial q&apos;}-\frac {d}{dt&apos;}\frac {\partial L&apos;}{\partial \frac
+{dq&apos;}{dt&apos;}}= -\frac {d}{dt&apos;}\Big (2m\sqrt {t&apos;}\frac {dq&apos;}{dt&apos;}\Big )= -m\frac {1}{\sqrt {t&apos;}}\frac {dq&apos;}{dt&apos;}-2m\sqrt
+{t&apos;}\frac {d^2q&apos;}{dt&apos;^2}=0,
+\end{equation}
+
+</p>
+
+<p>
+which is equivalent to
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{13}\)</span>
+
+<!--
+
+
+                                                                                               d2 q 1      1 dq 1
+                                                                                                      “ ´         .                                                                                        (7.14)                               --><a id="eq:13"></a><!--
+                                                                                               dt12       2t1 dt1
+
+-->
+
+<p>
+
+\begin{equation}
+\frac {d^2q&apos;}{dt&apos;^2}=-\frac {1}{2t&apos;}\frac {dq&apos;}{dt&apos;}\label {eq:13}.
+\end{equation}
+
+</p>
+
+<p>
+This equation holds since
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{14}\)</span>
+
+<!--
+
+
+                                                                               dq 1  1 v                   d2 q 1   1 v
+                                                                                    “ ? ,                         “´ ?        .                                                                            (7.15)                               --><a id="eq:14"></a><!--
+                                                                               dt1   2 t1                  dt12     4 p t1 q3
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:14} \frac {dq&apos;}{dt&apos;}=\frac 12 \frac {v}{\sqrt {t&apos;}},\quad \frac {d^2q&apos;}{dt&apos;^2}=-\frac {1}{4}\frac {v}{(\sqrt {t&apos;})^3}.
+\end{equation}
+
+</p>
+
+<p>
+The proof in the general case proceeds as follows.
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{15}\)</span>
+
+<!--
+
+
+                                        δL1     BL1      d BL1       dt BL         d ´ dt
+                                                                                         BL | dt 
+                                                                                                    1¯
+                                                                                                         dt ” BL      d ` BL ˘ı    dt ” δL ı
+                                              “       ´      dq 1α “          | ´                     “          | ´          | “          |,                                                             (7.16)                               --><a id="eq:15"></a><!--
+                                        δq 1α   Bq 1α   dt1 B dt1    dt1 Bq α     dt1 dt1 B q9α dt     dt1 Bq α     dt B q9α     dt1 δq α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:15} \frac {\delta L&apos;}{\delta q^{\prime \alpha }}=\frac {\partial L&apos;}{\partial q^{\prime \alpha }} -\frac {d}{dt&apos;}\frac {\partial
+L&apos;}{\partial \frac {dq^{\prime \alpha }}{dt&apos;}}= \frac {dt}{dt&apos;}\frac {\partial L}{\partial q^{\alpha }}|-\frac {d}{dt&apos;}\Big (\cancel {\frac
+{dt}{dt&apos;}} \frac {\partial L}{\partial \dot q^{\alpha }}|\cancel {\frac {dt&apos;}{dt}}\Big ) =\frac {dt}{dt&apos;}\Big [\frac {\partial L}{\partial q^{\alpha
+}}|-\frac {d}{dt}\big (\frac {\partial L}{\partial \dot q^\alpha }|\big )\Big ] =\frac {dt}{dt&apos;}\Big [\frac {\delta L}{\delta q^\alpha }\Big ]|,
+\end{equation}
+
+</p>
+
+<p>
+where the last equality holds provided one can show that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{16}\)</span>
+
+<!--
+
+                                                                                         d ` BL ˘ “ d BL ı
+                                                                                                  | “          |.                                                                                          (7.17)                               --><a id="eq:16"></a><!--
+                                                                                         dt B q9α     dt B q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:16} \frac {d}{dt}\big (\frac {\partial L}{\partial \dot q^\alpha }|\big )=\big [\frac {d}{dt}\frac {\partial L}{\partial \dot q^\alpha }\Big ]|.
+\end{equation}
+
+</p>
+
+<p>
+As in the preceding section, \(\frac {\delta L&apos;}{\delta q^{\prime \alpha }}=\frac {dt}{dt&apos;}(\frac {\delta L}{\delta q^\alpha })|\) means that, if \(q^\alpha (t)\) is a natural trajectory for
+\(L(q,\dot q,t)\), then so is \(q^{\prime \alpha }(t&apos;)=q^{\alpha }(t(t&apos;))\) for \(L&apos;(q&apos;,\frac {dq&apos;}{dt&apos;},t&apos;)\).
+</p>
+
+<p>
+In order to show <span class="textup">(<a href="node-7.html#eq:16">7.17</a>)</span>, we have
+</p>
+<span class="hidden"> \(\seteqnumber{0}{7.}{17}\)</span>
+
+
+<!--
+
+
+
+  d ” BL ` 1 1 dt1 dq 1        1
+                                  ˘ı
+           q pt q,        , tpt  q
+  dt B q9α         dt dt1
+                                                                                                                                                         B 2 L dt1 dq 1β       B 2 L ` d2 t1 dq 1β     dt1 2 d2 q 1β ˘    B 2 L dt 1
+                                                                                                                                                                                                                                    dt,
+                                                                                                                                                    “             |       `            |           ` p    q            `         |         (7.18)--><a id="eq:17"></a><!--
+                                                                                                                                                        Bq β B q9α dt dt1   B q9β B q9α dt2 dt1        dt     dt12       BtB q9α dt dt1
+
+
+-->
+
+
+<p>
+
+\begin{multline}
+\label {eq:17} \frac {d}{dt}\Big [\frac {\partial L}{\partial \dot q^\alpha }\big (q&apos;(t&apos;),\frac {dt&apos;}{dt}\frac {dq&apos;}{dt&apos;},t(t&apos;)\big )\Big
+]\\=\frac {\partial ^2L}{\partial q^\beta \partial \dot q^\alpha }|\frac {dt&apos;}{dt} \frac {dq^{\prime \beta }}{dt&apos;}+\frac {\partial ^2L}{\partial \dot q^\beta
+\partial \dot q^\alpha }|\big (\frac {d^2t&apos;}{dt^2}\frac {dq^{\prime \beta }}{dt&apos;} +(\frac {dt&apos;}{dt})^2\frac {d^2q^{\prime \beta }}{dt&apos;^2}\big
+)+\frac {\partial ^2L}{\partial t\partial \dot q^\alpha }|\cancel {\frac {dt&apos;}{dt}}\cancel {\frac {dt}{dt&apos;}},
+\end{multline}
+while
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{18}\)</span>
+
+<!--
+
+                                         ” d BL ı       B2 L           B2 L           B2 L
+                                                  α
+                                                    | “ β α |q9β | ` β α |:   qβ | `         |.                                                     (7.19)                                                                                      --><a id="eq:18"></a><!--
+                                          dt B q9      Bq B q9      B q9 B q9        BtB q9α
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:18} \Big [\frac {d}{dt}\frac {\partial L}{\partial \dot q^\alpha }\Big ]|=\frac {\partial ^2L}{\partial q^\beta \partial \dot q^\alpha }|\dot q^\beta |+
+\frac {\partial ^2L}{\partial \dot q^\beta \partial \dot q^\alpha }|\ddot q^\beta |+\frac {\partial ^2L}{\partial t\partial \dot q^\alpha }|.
+\end{equation}
+
+</p>
+
+<p>
+When taking into account <span class="textup">(<a href="node-7.html#eq:10">7.11</a>)</span>, the first terms on the RHS do agree, since so do the last terms, we only have to show that middle terms do as well, which is the
+case if
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{19}\)</span>
+
+<!--
+
+
+                                                             d2 t1 dq 1β     dt1 2 d2 q 1β
+                                                   q:β | “               ` p    q          .                                                        (7.20)                                                                                      --><a id="eq:19"></a><!--
+                                                             dt2 dt1         dt     dt12
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:19} \ddot q^\beta |=\frac {d^2t&apos;}{dt^2}\frac {dq^{\prime \beta }}{dt&apos;} +(\frac {dt&apos;}{dt})^2\frac {d^2q^{\prime \beta }}{dt&apos;^2}.
+\end{equation}
+
+</p>
+
+<p>
+Differentiating <span class="textup">(<a href="node-7.html#eq:10">7.11</a>)</span> with respect to \(t&apos;\) gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{20}\)</span>
+
+<!--
+
+
+                                            d2 q 1β    d dt β        d2 t β       dt
+                                                    “    p    q
+                                                              9 |q “      q9 | ` p 1 q2 q:β |,                                                      (7.21)                                                                                      --><a id="eq:20"></a><!--
+                                             dt12     dt1 dt1        dt12         dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:20} \frac {d^2 q^{\prime \beta }}{dt&apos;^2} =\frac {d}{dt&apos;}( \frac {dt}{dt&apos;} \dot q^\beta |)=\frac {d^2t}{dt&apos;^2}\dot q^\beta |+(\frac
+{dt}{dt&apos;})^2\ddot q^\beta |,
+\end{equation}
+
+</p>
+
+<p>
+which implies that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{21}\)</span>
+
+<!--
+
+
+                                                            dt1 2 d2 q 1β    dt1 d2 t
+                                                q:β | “ p      q      12
+                                                                          ´ p q2 12 q9β |.                                                          (7.22)                                                                                      --><a id="eq:21"></a><!--
+                                                            dt     dt        dt dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:21} \ddot q^\beta |=(\frac {dt&apos;}{dt})^2 \frac {d^2 q^{\prime \beta }}{dt&apos;^2}-(\frac {dt&apos;}{dt})^2\frac {d^2t}{dt&apos;^2}\dot q^\beta |.
+\end{equation}
+
+</p>
+
+<p>
+This gives the result when using <span class="textup">(<a href="node-7.html#eq:10">7.11</a>)</span> and
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{22}\)</span>
+
+<!--
+
+
+                                       d dt1 dt     d2 t1 dt dt1 d2 t d2 t1 dt1 d2 t
+                                0“       p     1
+                                                 q “ 2 1 ` p q2 12 ùñ 2 “ ´p q3 12 .                                                                (7.23)                                                                                      --><a id="eq:22"></a><!--
+                                       dt dt dt     dt dt    dt dt    dt    dt dt
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:22} 0=\frac {d}{dt}(\frac {dt&apos;}{dt}\frac {dt}{dt&apos;})=\frac {d^2t&apos;}{dt^2}\frac {dt}{dt&apos;} +(\frac {dt&apos;}{dt})^2\frac
+{d^2t}{dt&apos;^2}\Longrightarrow \frac {d^2t&apos;}{dt^2}=-(\frac {dt&apos;}{dt})^3\frac {d^2t}{dt&apos;^2}.
+\end{equation}
+
+</p>
+<!--
+...... section Combined change of variables ......
+-->
+<h4 id="autosec-84"><span class="sectionnumber">7.3&#x2003;</span>Combined change of variables</h4>
+<a id="mechanics-autopage-84"></a>
+
+
+<a id="sec:comb-change-vari"></a>
+
+<p>
+When combining the results of the two previous sections, Euler-Lagrange equations are covariant under
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{23}\)</span>
+
+<!--
+
+                                                           "
+                                                               q α “ q α pq 1β , t1 q
+                                                                                                                            (7.24)                --><a id="eq:23"></a><!--
+                                                               t “ tpt1 q
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:23} \left \{\begin{array}{l} q^\alpha =q^\alpha (q^{\prime \beta },t&apos;) \\ t=t(t&apos;) \end {array}\right .
+\end{equation}
+
+</p>
+
+<p>
+with inverse
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{24}\)</span>
+
+<!--
+
+                                                          "
+                                                               q α “ q 1α pq β , tq
+                                                                                                                           (7.25)                --><a id="eq:23a"></a><!--
+                                                               t1 “ t1 ptq
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:23a} \left \{\begin{array}{l} q^{\alpha }=q^{\prime \alpha }(q^{\beta },t) \\ t&apos;=t&apos;(t) \end {array}\right .
+\end{equation}
+
+</p>
+
+<p>
+provided that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{25}\)</span>
+
+<!--
+
+                           ´            d               ¯ dt ´                        dt1 d α 1β 1 1                ¯
+                         L1 q 1β pt1 q, 1 q 1β pt1 q, t1 “ 1 L q α pq 1β pt1 q, t1 q,        q pq pt q, t q, tpt1
+                                                                                                                  q   ,     (7.26)                --><a id="eq:24"></a><!--
+                                       dt                 dt                          dt dt1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:24} \boxed {L&apos;\Big (q^{\prime \beta }(t&apos;),\frac {d}{dt&apos;}q^{\prime \beta }(t&apos;),t&apos;\Big ) =\frac {dt}{dt&apos;} L\Big (q^\alpha
+(q^{\prime \beta }(t&apos;),t&apos;),\frac {dt&apos;}{dt}\frac {d}{dt&apos;} q^\alpha (q^{\prime \beta }(t&apos;),t&apos;),t(t&apos;)\Big )},
+\end{equation}
+
+</p>
+
+<p>
+with \(\frac {d}{dt&apos;} q^\alpha (q^{\prime \beta }(t&apos;),t&apos;) =\frac {\partial q^\alpha }{\partial q^{\prime \gamma }}\frac {d q^{\prime \gamma
+}}{dt&apos;}+\frac {\partial q^\alpha }{\partial t&apos;}\). Indeed, showing that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{7.}{26}\)</span>
+
+<!--
+
+                                                         δL1     dt ` δL ˘ Bq α
+                                                               “          |     .                                           (7.27)                --><a id="eq:25"></a><!--
+                                                         δq 1β   dt1 δq α Bq 1β
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:25} \frac {\delta L&apos;}{\delta q^{\prime \beta }}=\frac {dt}{dt&apos;}\big (\frac {\delta L}{\delta q^\alpha }\big )|\frac {\partial q^\alpha }{\partial
+q^{\prime \beta }}.
+\end{equation}
+
+</p>
+
+<p>
+can now be done in a straightforward way by combining the intermediate steps of the proofs of the previous two sections.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

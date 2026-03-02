@@ -1,0 +1,962 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Relativistic particles</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                                             // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                                               // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);                                // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);                                  // the subequations argument
+                         const neweqsection = parser.GetArgument(name);                               // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);                                // the eq number argument
+                         MathJax.config.subequations=newsubequations ;                                // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;                                        // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-128"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Relativistic particles ......
+-->
+<h3 id="autosec-128">Chapter&nbsp;<span class="sectionnumber">12&#x2003;</span>Relativistic particles</h3>
+
+<a id="mechanics-autofile-12"></a>
+
+<a id="sec:relat-part"></a>
+
+<p>
+When one considers relativistic particles rather than non-relativistic ones, the action
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{0}\)</span>
+
+<!--
+
+                                                                                   ż        N
+                                                                                            ÿ   1
+                                                                       SP “            dt         mpaq x9 ia x9 ai ,                                                         (12.1)                     --><a id="eq:freepart"></a><!--
+                                                                                            a“1
+                                                                                                2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:freepart} S_P=\int dt \sum _{a=1}^N \frac 12 m_{(a)}\dot x^i_a\dot x_{ai},
+\end{equation}
+
+</p>
+
+<p>
+for \(N\) free non-relativistic particles must be replaced by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{1}\)</span>
+
+<!--
+
+                                                                                    N
+                                                                                                                c
+                                                                                                                        dxµa dxaµ
+                                                                                    ÿ                  ż
+                                                                    SP “ ´                  mpaq c         dτ       ´             .                                                   (12.2)                   --><a id="eq:419"></a><!--
+                                                                                    a“1
+                                                                                                                         dτ dτ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:419} S_P=-\sum _{a=1}^N m_{(a)}c\int d\tau \sqrt {-\frac {d x^\mu _a}{d \tau }\frac {dx_{a\mu }}{d\tau }}.
+\end{equation}
+
+</p>
+
+<p>
+This action reduces to the non-relativistic one in the limit of small velocities as compared to the speed of light. Indeed, if we choose \(\tau =x^0=ct\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{2}\)</span>
+
+<!--
+
+
+                                                                                                                                                   c
+                                                                                                                                                dxµa dxaµ
+                                                                                                                                          ż
+                                                                                                                               ´ mpaq c       dτ
+                                                                                                                                              ´
+                                                                                                                                                 dτ dτ
+                                                                                                                                           ż c                       (12.3) ż                                  --><a id="eq:420"></a><!--
+                                                                                                                                         2            1 d⃗xa d⃗xa              `    1 1 d⃗xa d⃗xa ˘
+                                                                                                                               “ ´mpaq c    dt 1 ´ 2        ¨     « ´mpaq c2 dt 1 ´         ¨       .
+                                                                                                                                                     c dt     dt                    2 c2 dt   dt
+
+-->
+
+<p>
+
+\begin{equation}
+\begin{split} \label {eq:420} &amp;-m_{(a)}c\int d\tau \sqrt {-\frac {d x^\mu _a}{d \tau }\frac {dx_{a\mu }}{d\tau }}\\&amp;= -m_{(a)}c^{2}\int dt \sqrt {1-\frac
+{1}{c^2}\frac {d\vec x_a}{dt}\cdot \frac {d \vec x^a}{dt}} \approx -m_{(a)}c^2\int dt\big (1-\frac 12\frac {1}{c^2} \frac {d\vec x_a}{dt}\cdot \frac {d\vec x^a}{dt}
+\big ). \end {split}
+\end{equation}
+
+</p>
+
+<p>
+The first term is a constant which does not contribute to the Euler-Lagrange equations and thus can be dropped, while the second terms reduces to the action for a collection of non-relativistic particles, <span class="textup">(<a
+href="node-12.html#eq:freepart">12.1</a>)</span>.
+</p>
+
+<p>
+Let us now set \(c=1\) and study in more details a single relativistic particle, whose worldline is described by \(x^\mu (\tau )\) in Minkowski spacetime. The associated action is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{3}\)</span>
+
+<!--
+
+                                                                     ż                             a
+                                                        SP rxµ s “       dτ LP ,            LP “ ´m ´x9 ν x9 ν ,                                                    (12.4)                                     --><a id="eq:408"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:408} S_P[x^\mu ]=\int d\tau \, L_P,\quad L_P=-m \sqrt {-\dot x^\nu \dot x_\nu },
+\end{equation}
+
+</p>
+
+<p>
+with \(\dot x^\nu =\frac {dx^\nu }{d\tau }\). For variations that vanish at the boundary of the \(\tau \) interval, the variation of the Lagrangian is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{4}\)</span>
+
+<!--
+
+                                                                  ´δ x9 µ x9 µ
+                                                           ż                                      ż
+                                                                                                                    d ´ x9 µ ¯
+                                             δSP “ ´m          dτ ? ν          “ ´m                   dτ δxµ           ? ν       ,                                  (12.5)                                     --><a id="eq:425"></a><!--
+                                                                   ´x9 x9 ν                                        dτ   ´x9 x9 ν
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:425} \delta S_P=-m\int d\tau \, \frac {-\delta \dot x^\mu \dot x_\mu }{\sqrt {-\dot x^\nu \dot x_\nu }}= -m\int d\tau \, \delta x^\mu \frac {d}{d\tau }\Big
+(\frac {\dot x_\mu }{\sqrt {-\dot x^\nu \dot x_\nu }}\Big ),
+\end{equation}
+
+</p>
+
+<p>
+and the Euler-Lagrange equations are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{5}\)</span>
+
+<!--
+
+                                                               δLP       d ´ x9 µ ¯
+                                                                   “ ´m     ? ν       “ 0.                                                                          (12.6)                                     --><a id="eq:426"></a><!--
+                                                               δxµ      dτ   ´x9 x9 ν
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:426} \frac {\delta L_P}{\delta x^\mu }=-m\frac {d}{d\tau }\Big (\frac {\dot x_\mu }{\sqrt {-\dot x^\nu \dot x_\nu }}\Big )=0.
+\end{equation}
+
+</p>
+
+<p>
+It is not possible to pass to the Hamiltonian formulation through a Legendre transformation: the Hessian matrix
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{6}\)</span>
+
+<!--
+
+
+                                                                                   B 2 LP
+                                                                                                                                                                    (12.7)                                     --><a id="eq:427"></a><!--
+                                                                                  B x9 µ B x9 λ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:427} \frac {\partial ^2 L_P}{\partial \dot x^\mu \partial \dot x^\lambda }
+\end{equation}
+
+</p>
+
+<p>
+is not invertibe. Indeed,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{7}\)</span>
+
+<!--
+
+
+                                                B 2 LP            ´x9 ν x9 ν ηµλ ` x9 µ x9 λ                     B 2 LP λ
+                                                             “ ´m       ?                    ,                                x9 “ 0,                               (12.8)                                     --><a id="eq:428"></a><!--
+                                               B x9 µ B x9 λ          p ´x9 ν x9 ν q3                           B x9 µ B x9 λ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:428} \frac {\partial ^2 L_P}{\partial \dot x^\mu \partial \dot x^\lambda }= -m\frac {-\dot x^\nu \dot x_\nu \eta _{\mu \lambda }+\dot x_\mu \dot x_\lambda
+}{(\sqrt {-\dot x^\nu \dot x_\nu })^3},\quad \frac {\partial ^2 L_P}{\partial \dot x^\mu \partial \dot x^\lambda }\dot x^\lambda =0,
+\end{equation}
+
+</p>
+
+<p>
+so that \(\dot x^\lambda \) is an eigenvector of eigenvalue \(0\).
+</p>
+
+<p>
+The correct first order action principle whose equation of motion are equivalent to the Lagrangian ones in <span class="textup">(<a href="node-12.html#eq:427">12.7</a>)</span> is given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{8}\)</span>
+
+<!--
+
+                                                                             ż
+                                                                                   “                        ‰
+                                                    Srxµ , pµ , λs “             dτ x9 µ pµ ´ λppµ pµ ` m2 q .                                                      (12.9)                                     --><a id="eq:429"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:429} S[x^\mu ,p_\mu ,\lambda ]=\int d\tau \,\big [\dot x^\mu p_\mu -\lambda (p^\mu p_\mu +m^2)\big ].
+\end{equation}
+
+</p>
+
+<p>
+The associated Euler-Lagrange equations with respect to \(x^\mu ,p_\mu ,\lambda \) are
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{9}\)</span>
+
+<!--
+
+
+                                                    p9µ “ 0,      x9 µ ´ 2λpµ “ 0,                    pµ pµ ` m2 “ 0.                                              (12.10)                                     --><a id="eq:430"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:430} \dot p_\mu =0,\quad \dot x^\mu -2\lambda p^\mu =0,\quad p^\mu p_\mu +m^2=0.
+\end{equation}
+
+</p>
+
+<p>
+It is a “constrained Hamiltonian system” in the sense that \(\lambda (\tau )\) is a Lagrange multiplier for the constraint \(p^\mu p_\mu +m^2\) that does not involve time derivatives of the phase space variables \(x^\mu ,p_\mu \).
+</p>
+
+<p>
+The general solution to the equations of motion is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{10}\)</span>
+
+<!--
+
+                                                                                                      żτ                            a
+                                                           µ             µ                  µ
+                              pµ pτ q “ pµ p0q ” pµ ,     x pτ q “ x p0q ` 2p p0q                          dτ 1 λpτ 1 q,      p0 “ ˘ pi pi ` m2 .                  (12.11)                                     --><a id="eq:431"></a><!--
+                                                                                                       0
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:431} p_\mu (\tau )=p_\mu (0)\equiv p_\mu ,\quad x^\mu (\tau )=x^\mu (0)+2 p^\mu (0)\int _0^\tau d\tau &apos; \lambda (\tau &apos;),\quad p^0=\pm \sqrt
+{p_ip^i+m^2}.
+\end{equation}
+
+</p>
+
+<p>
+where \(p_\mu \) are \(\tau \)-independent constants. Alternatively, if \(\lambda &gt; 0\), the equations for \(p_\mu \) may be solved as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{11}\)</span>
+
+<!--
+
+                                                                                          1
+                                                                          pµ “ ´            x9 µ .                                                                 (12.12)                                     --><a id="eq:432"></a><!--
+                                                                                         2λ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:432} p_\mu =-\frac {1}{2\lambda }\dot x_\mu .
+\end{equation}
+
+</p>
+
+<p>
+When substituting in the equation for \(\lambda \), one finds
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{12}\)</span>
+
+<!--
+
+                                                                                                           ?
+                                                          x9 µ x9 µ                                            ´x9 ν x9 ν
+                                                                    ` m2 “ 0 ðñ λ “                                       .                                        (12.13)                                     --><a id="eq:433"></a><!--
+                                                            4λ2                                                2m
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:433} \frac {\dot x^\mu \dot x_\mu }{4\lambda ^2}+m^2=0\iff \lambda = \frac {\sqrt {-\dot x^\nu \dot x_\nu }}{2m}.
+\end{equation}
+
+</p>
+
+<p>
+When substituting both of these equations into the equation for \(x^\mu \), i.e., the first equation in <span class="textup">(<a href="node-12.html#eq:430">12.10</a>)</span>, one recovers the Lagrangian equations <span
+class="textup">(<a href="node-12.html#eq:426">12.6</a>)</span>. It is in this sense that the Lagrangian equations <span class="textup">(<a href="node-12.html#eq:426">12.6</a>)</span> and the first
+order equations <span class="textup">(<a href="node-12.html#eq:430">12.10</a>)</span> are equivalent. Finally, note also that the first order action <span class="textup">(<a
+href="node-12.html#eq:429">12.9</a>)</span> reduces to the Lagrangian action <span class="textup">(<a href="node-12.html#eq:408">12.4</a>)</span> when substituting both <span
+class="textup">(<a href="node-12.html#eq:432">12.12</a>)</span> and <span class="textup">(<a href="node-12.html#eq:433">12.13</a>)</span>.
+</p>
+
+<p>
+The \(x^\mu \) can be considered as coordinates on Minkowski spacetime with metric \(\eta _{\mu \nu }={\rm diag}(-1,1,1,1)\) that is used to lower indices. Its inverse is denoted by \(\eta ^{\mu \nu }={\rm
+diag}(-1,1,1,1)\), \(\eta _{\mu \nu }\eta ^{\nu \rho }=\delta _\mu ^\rho \) and is used to raise indices.
+</p>
+
+<p>
+Poincare&#x0301; transformations are defined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{13}\)</span>
+
+<!--
+
+
+                                                                      x1µ “ Λµ ν xν ` aµ ,                                                                         (12.14)                                     --><a id="eq:436"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:436} x&apos;^\mu ={\Lambda ^\mu }_\nu x^\nu +a^\mu ,
+\end{equation}
+
+</p>
+
+<p>
+where the matrix \({\Lambda ^\mu }_\nu \) satisfies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{14}\)</span>
+
+<!--
+
+                                                                                                                               ` σ ˘´1
+                                Λµ ν ηµσ Λσ ρ “ ηνρ ðñ ΛT ηΛ “ η ðñ Λσ ν Λσ ρ “ δνρ ðñ                                          Λ ρ    “ Λσ ρ ,                    (12.15)                                     --><a id="eq:437"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:437} {\Lambda ^\mu }_\nu \eta _{\mu \sigma }{\Lambda ^\sigma }_\rho =\eta _{\nu \rho } \iff \Lambda ^T\eta \Lambda =\eta \iff {\Lambda _\sigma }^\nu {\Lambda
+^\sigma }_\rho =\delta ^\rho _\nu \iff \big ({\Lambda ^\sigma }_\rho \big )^{-1}={\Lambda _\sigma }^\rho ,
+\end{equation}
+
+</p>
+
+<p>
+The transformations with \({\Lambda ^\mu }_\nu =0\), \(x&apos;^\mu =x^\mu +a^\mu \) are called translations, those with \(a^\mu =0\), \(x&apos;^\mu ={\Lambda ^\mu }_\nu x^\nu \) Lorentz transformations.
+</p>
+
+<p>
+For Poincare&#x0301; transformations (that do not depend on \(\tau \)), the Lagrangian \(L_P\) and thus the action \(S_P\) is invariant,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{15}\)</span>
+
+<!--
+
+
+                                                                         SP rx1µ s “ Srxµ s.                                                                       (12.16)                                     --><a id="eq:438"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:438} S_P[x&apos;^\mu ]=S[x^\mu ].
+\end{equation}
+
+</p>
+
+<p>
+As in the discussion of Galilean invariance, infinitesimal Lorentz transformations are of the form
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{16}\)</span>
+
+<!--
+
+
+                                                     Λµ ν “ δνµ ` ω µ ν ` Opω 2 q,                     ωµν “ ´ωνµ ,                                                (12.17)                                     --><a id="eq:439"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:439} {\Lambda ^\mu }_\nu =\delta ^\mu _\nu +{\omega ^\mu }_\nu +O(\omega ^2),\quad \omega _{\mu \nu }=-\omega _{\nu \mu },
+\end{equation}
+
+</p>
+
+<p>
+and contain \(6\) parameters, while infinitesimal translations are characterized by \(a^\mu =0+\alpha ^\mu \) and contain \(4\) parameters. The associated infinitesimal Poincare&#x0301; transformations on Minkowski spacetime are given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{17}\)</span>
+
+<!--
+
+
+                                                                   δω,α xµ “ ω µ ν xν ` αµ .                                                                       (12.18)                                     --><a id="eq:440"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:440} \delta _{\omega ,\alpha } x^\mu ={\omega ^\mu }_\nu x^\nu +\alpha ^\mu .
+\end{equation}
+
+</p>
+
+<p>
+According to Noether’s theorem, there are \(10\) conserved quantitites given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{18}\)</span>
+
+<!--
+
+                                                                      BLP              x9 µ δω,α xµ
+                                                          Kω,α “          µ
+                                                                            δω,α xµ “ m ? ν .                                                                      (12.19)                                     --><a id="eq:441"></a><!--
+                                                                      B x9                 ´x9 x9 ν
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:441} K_{\omega ,\alpha }=\frac {\partial L_P}{\partial \dot x^\mu }\delta _{{\omega ,\alpha }} x^\mu =m\frac {\dot x_\mu \delta _{\omega ,\alpha }x^\mu
+}{\sqrt {-\dot x^\nu \dot x_\nu }}.
+\end{equation}
+
+</p>
+
+<p>
+The individual conserved quantities are denoted by \(P^\mu ,L^{\mu \nu }\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{19}\)</span>
+
+<!--
+
+                                                                                 1
+                                                                Kω,α “             ωµν Lµν ` αµ P µ ,                                                              (12.20)                                     --><a id="eq:442"></a><!--
+                                                                                 2
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:442} K_{\omega ,\alpha }=\frac 12 \omega _{\mu \nu }L^{\mu \nu }+\alpha _\mu P^\mu ,
+\end{equation}
+
+</p>
+
+<p>
+and are explicitly given by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{20}\)</span>
+
+<!--
+
+                                                                   x9 µ                       x9 µ xν ´ x9 ν xµ
+                                                   Pµ “ m?                   ,         Lµν “ m ? σ              .                                                  (12.21)                                     --><a id="eq:443"></a><!--
+                                                                  ´x9 σ x9 σ                        ´x9 x9 σ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:443} P^\mu =m\frac {\dot x^\mu }{\sqrt {-\dot x^\sigma \dot x_\sigma }},\quad L^{\mu \nu }=m\frac {\dot x^\mu x^\nu -\dot x^\nu x^\mu }{\sqrt {-\dot x^\sigma
+\dot x_\sigma }}.
+\end{equation}
+
+</p>
+
+<p>
+For several particles, one finds instead,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{12.}{21}\)</span>
+
+<!--
+
+                                                   N                                                  N
+                                                   ÿ               x9 µa                              ÿ       x9 µa xνa ´ x9 νa xµa
+                                            Pµ “         mpaq a                 ,       Lµν “             mpaq a                    .                              (12.22)                                     --><a id="eq:444"></a><!--
+                                                   a“1
+                                                                  ´x9 σa x9 σ,a                       a“1
+                                                                                                                     ´x9 σa x9 σ,a
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:444} P^\mu =\sum _{a=1}^Nm_{(a)}\frac {\dot x^\mu _a}{\sqrt {-\dot x^\sigma _a\dot x_{\sigma ,a}}},\quad L^{\mu \nu }=\sum _{a=1}^Nm_{(a)} \frac {\dot x^\mu
+_a x^\nu _a-\dot x^\nu _a x^\mu _a}{\sqrt {-\dot x^\sigma _a\dot x_{\sigma ,a}}}.
+\end{equation}
+
+</p>
+
+<p>
+relativistic invariance, to be continued
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

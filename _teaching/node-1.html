@@ -1,0 +1,1260 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Glenn Barnich" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Lecture Notes for MATHF204" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MATH-F-204 Analytical Mechanics II — Extremisation, constraints and Lagrange multipliers</title>
+<link rel="stylesheet" type="text/css" href="lwarp_sagebrush.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+    subequations: "0",
+    section: "",
+    loader: {
+        load: ['[tex]/tagformat', '[tex]/textmacros'],
+    },
+    startup: {
+        ready() {
+            //       These would be replaced by import commands if you wanted to make
+            //       a proper extension.
+            const Configuration = MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+
+            //       Insert the replacement string into the TeX string, and check
+            //       that there haven't been too many maxro substitutions (prevents
+            //       infinite loops).
+            const useArgument = (parser, text) => {
+                 parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                 parser.i = 0;
+                 if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                     throw new TexError('MaxMacroSub1',
+                     'MathJax maximum macro substitution count exceeded; ' +
+                     'is there a recursive macro call?');
+                 }
+            }
+
+
+            //       Create the command map for:
+            //           \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+            new CommandMap('Lwarp-macros', {
+                 ifstar: 'IfstarFunction',
+                 ifnextchar: 'IfnextcharFunction',
+                 ifblank: 'IfblankFunction',
+                 ifstrequal: 'IfstrequalFunction',
+                 gsubstitute: 'GsubstituteFunction',
+                 seteqnumber: 'SeteqnumberFunction'
+            }, {
+                 //      This function implements an ifstar macro.
+                 IfstarFunction(parser, name) {
+                     const resultstar = parser.GetArgument(name);
+                     const resultnostar = parser.GetArgument(name);
+                     const star = parser.GetStar();                        // true if there is a *
+                     useArgument(parser, star ? resultstar : resultnostar);
+                 },
+
+
+                 //      This function implements an ifnextchar macro.
+                 IfnextcharFunction(parser, name) {
+                     let whichchar = parser.GetArgument(name);
+                     if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                         // $ syntax highlighting
+                         whichchar = String.fromCodePoint(parseInt(whichchar));
+                     }
+                     const resultnextchar = parser.GetArgument(name);
+                     const resultnotnextchar = parser.GetArgument(name);
+                     const gotchar = (parser.GetNext() === whichchar);
+                     useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                 },
+
+
+                 // This function implements an ifblank macro.
+                 IfblankFunction(parser, name) {
+                     const blankarg = parser.GetArgument(name);
+                     const resultblank = parser.GetArgument(name);
+                     const resultnotblank = parser.GetArgument(name);
+                     const isblank = (blankarg.trim() == "");
+                     useArgument(parser, isblank ? resultblank : resultnotblank);
+                 },
+
+
+                 // This function implements an ifstrequal macro.
+                 IfstrequalFunction(parser, name) {
+                     const strequalfirst = parser.GetArgument(name);
+                     const strequalsecond = parser.GetArgument(name);
+                     const resultequal = parser.GetArgument(name);
+                     const resultnotequal = parser.GetArgument(name);
+                     const isequal = (strequalfirst == strequalsecond);
+                     useArgument(parser, isequal ? resultequal : resultnotequal);
+                 },
+
+
+                 // This function implements a gsub macro.
+                 GsubstituteFunction(parser, name) {
+                     const gsubfirst = parser.GetArgument(name);
+                     const gsubsecond = parser.GetArgument(name);
+                     const gsubthird = parser.GetArgument(name);
+                     let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                     useArgument(parser, gsubresult);
+                 },
+
+
+                 //      This function modifies the equation numbers.
+                 SeteqnumberFunction(parser, name) {
+                         //   Get the macro parameters
+                         const star = parser.GetStar();                      // true if there is a *
+                         const optBrackets = parser.GetBrackets(name);       // contents of optional brackets
+                         const newsubequations = parser.GetArgument(name);      // the subequations argument
+                         const neweqsection = parser.GetArgument(name);      // the eq section argument
+                         const neweqnumber = parser.GetArgument(name);       // the eq number argument
+                         MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                         MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                         parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                 }
+
+
+            });
+
+
+            //        Create the Lwarp-macros package
+            Configuration.create('Lwarp-macros', {
+                 handler: {macro: ['Lwarp-macros']}
+            });
+
+
+            MathJax.startup.defaultReady();
+
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         MathJax.config.subequations = math.inputData.recompile.subequations;
+                         MathJax.config.section = math.inputData.recompile.section;
+                 }
+            });
+            MathJax.startup.input[0].postFilters.add(({math}) => {
+                 if (math.inputData.recompile){
+                         math.inputData.recompile.subequations = MathJax.config.subequations;
+                         math.inputData.recompile.section = MathJax.config.section;
+                 }
+            });
+
+
+                 // For \left, \right with unicode-math:
+                 const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                 const {Symbol} = MathJax._.input.tex.Symbol;
+                 const {MapHandler} = MathJax._.input.tex.MapHandler;
+                 const delimiter = MapHandler.getMap('delimiter');
+                 delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                 delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                 delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                 delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                 delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                 delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                 delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                 delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                 delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                 delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                 delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                 delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                 delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                 delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                 delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                 delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                 delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                 delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                 delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                 delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                 delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                 delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                 delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                 delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                 delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                 delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                 delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                 delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                 delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                 delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                 delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                 delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                 delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                 delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                 delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                 delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                 delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                 delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                 delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+        }        // ready
+    },           // startup
+
+
+    tex: {
+        packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+        tags: "ams",
+                 tagformat: {
+                         number: function (n) {
+                              if(MathJax.config.subequations==0)
+                                     return(MathJax.config.section + n);
+                              else
+                                     return(MathJax.config.section + String.fromCharCode(96+n));
+                         },
+                 },
+    }
+}
+</script>
+
+
+<script
+        id="MathJax-script"
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="mechanics-autopage-5"></a>
+
+
+<div class="bodyandsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+   style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\def \LWRtensorindicesthreesub #1#2{{_{#2}}\LWRtensorindicesthree }\)
+
+\(\def \LWRtensorindicesthreesup #1#2{{^{#2}}\LWRtensorindicesthree }\)
+
+\(\newcommand {\LWRtensorindicesthreenotsup }{}\)
+
+\(\newcommand {\LWRtensorindicesthreenotsub }{ \ifnextchar ^ \LWRtensorindicesthreesup \LWRtensorindicesthreenotsup }\)
+
+\(\newcommand {\LWRtensorindicesthree }{ \ifnextchar _ \LWRtensorindicesthreesub \LWRtensorindicesthreenotsub }\)
+
+\(\newcommand {\LWRtensorindicestwo }{ \ifstar \LWRtensorindicesthree \LWRtensorindicesthree }\)
+
+\(\newcommand {\indices }[1]{\LWRtensorindicestwo #1}\)
+
+\(\newcommand {\LWRtensortwo }[3][]{{}\indices {#1}{#2}\indices {#3}}\)
+
+\(\newcommand {\tensor }{\ifstar \LWRtensortwo \LWRtensortwo }\)
+
+\(\newcommand {\LWRnuclidetwo }[2][]{{\vphantom {\mathrm {#2}}{}^{\LWRtensornucleonnumber }_{#1}\mathrm {#2}}}\)
+
+\(\newcommand {\nuclide }[1][]{\def \LWRtensornucleonnumber {#1}\LWRnuclidetwo }\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\require {cancel}\)
+
+</div>
+
+<!--
+...... chapter Extremisation, constraints and Lagrange multipliers ......
+-->
+<h3 id="autosec-5">Chapter&nbsp;<span class="sectionnumber">1&#x2003;</span>Extremisation, constraints and Lagrange multipliers</h3>
+
+<a id="mechanics-autofile-1"></a>
+
+<p>
+The purpose of this chapter is to re-derive in the finite-dimensional case standard results on constrained extremisation so as to motivate and clarify analogous results needed in the functional case. It is based on chapters II.1, II.2, II.5 of [<a
+href="node-14.html#LWR-ht-cite.0@lanczos1986variational">8</a>]. The discussion on constraints and regularity conditions is taken from chapter 1 of [<a
+href="node-14.html#LWR-ht-cite.0@Henneaux:1992ig">11</a>].
+</p>
+<!--
+...... section Unconstrained extremisation ......
+-->
+<h4 id="autosec-6"><span class="sectionnumber">1.1&#x2003;</span>Unconstrained extremisation</h4>
+<a id="mechanics-autopage-6"></a>
+
+
+<a id="sec:unconstr-extr"></a>
+
+<p>
+The problem consists of finding the extrema (=stationary points) of a function \(F(x^1,\dots ,x^n)\) of \(n\) variables \(x^a\), \(a=1,\dots ,n\) in the interior of a domain. We write the variation of such a function under variations \(\delta
+x^a\) of the variables \(x^a\) as
+</p>
+
+<p>
+\[ \label {eq:26} \boxed {\delta F=\delta x^a\frac {\partial F}{\partial x^a}}.                                     \]
+</p>
+
+<p>
+Here and throughout, we use the summation convention over repeated indices, \(\delta x^a\frac {\partial F}{\partial x^a}=\sum _{a=1}^n\delta x^a\frac {\partial F}{\partial x^a}\). Since for a collection
+of functions \(f_a(x^b)\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{0}\)</span>
+
+<!--
+
+
+                                                                                                           fa δxa “ 0, @δxa ùñ fa “ 0,                                                                    (1.1)--><a id="eq:34"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:34} f_a\delta x^a=0, \forall \delta x^a\Longrightarrow f_a=0,
+\end{equation}
+
+</p>
+
+<p>
+it follows that the extrema \(\bar x^a\) are determined by the vanishing of the gradient of \(F\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{1}\)</span>
+
+<!--
+
+
+                                                                                                                            BF
+                                                                                                            δF “ 0 ðñ           |x“x̄ “ 0 .                                                               (1.2)--><a id="eq:27"></a><!--
+                                                                                                                            Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:27} \boxed {\delta F=0\iff \frac {\partial F}{\partial x^a}|_{x=\bar x}=0}.
+\end{equation}
+
+</p>
+
+<p>
+Recall further that the nature (maximum, minimum, saddle point) of each extremum is determined by the eigenvalues of the matrix
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{2}\)</span>
+
+<!--
+
+
+                                                                                                                     B2 F
+                                                                                                                            |x“x̄ .                                                                       (1.3)--><a id="eq:28"></a><!--
+                                                                                                                    Bxa Bxb
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:28} \frac {\partial ^2 F}{\partial x^a\partial x^b}|_{x=\bar x}.
+\end{equation}
+
+</p>
+
+<p>
+Remark: The geometric interpretation of the LHS of&nbsp;<span class="textup">(<a href="node-1.html#eq:34">1.1</a>)</span> is that the vectors \(\vec f\) and \(\vec \delta x\) are perpendicular (in Euclidean
+space \(\mathbb R^n\)).
+</p>
+<!--
+...... section Constraints and regularity conditions ......
+-->
+<h4 id="autosec-7"><span class="sectionnumber">1.2&#x2003;</span>Constraints and regularity conditions</h4>
+<a id="mechanics-autopage-7"></a>
+
+
+<a id="sec:regul-cond-constr"></a>
+
+<p>
+Very often, one is interested in a problem of extremisation, where the variables \(x^a\) are subjected to constraints, that is to say where \(r\) independent relations
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{3}\)</span>
+
+<!--
+
+
+                                                                                                                     Gm pxq “ 0,     m “ 1, . . . r,                                                   (1.4)--><a id="eq:29"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:29} G_m(x)=0,\quad m=1,\dots r,
+\end{equation}
+
+</p>
+
+<p>
+are supposed to hold. Standard regularity on the functions \(G_m\) are that the rank of the matrix \(\frac {\partial G_m}{\partial x^a}\) is \(r\) (locally, in a neighborhood of \(G_m=0\)). Without loss of generality (by renaming if
+necessary some of the variables), we can assume that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{4}\)</span>
+
+<!--
+
+                                                                                                                 BGm
+                                                                                                             |       | ‰ 0, for a “ n ´ r ` 1, . . . , n.                                              (1.5)--><a id="eq:36"></a><!--
+                                                                                                                 Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:36} |\frac {\partial G_m}{\partial x^a}|\neq 0, {\rm for}\ a= n-r+1,\dots , n.
+\end{equation}
+
+</p>
+
+<p>
+One can prove<sup>1</sup> that this implies that one may locally solve the constraints in terms of the \(r\) last coordinates,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{5}\)</span>
+
+<!--
+
+
+                                                                                         Gm “ 0 ðñ x∆ “ X ∆ pxα q,             ∆ “ n ´ r ` 1, . . . , n,    α “ 1, . . . , n ´ r.                      (1.6)--><a id="eq:37"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:37} G_m=0\iff x^\Delta =X^\Delta (x^\alpha ),\quad \Delta =n-r+1,\dots , n,\quad \alpha =1,\dots , n-r.
+\end{equation}
+
+</p>
+
+<p>
+In this case, one refers to the \(x^\Delta \) as dependent and to the \(x^\alpha \) as independent variables.
+</p>
+
+<p>
+This also means that one may choose locally a new system of coordinates such that \(G_m\) are \(r\) of the new coordinates, \(x^a\longleftrightarrow q^\alpha , G_m\), with \(\alpha =1,\dots n-r\).
+</p>
+
+<p>
+Example: Consider a circle of radius \(R\) in \(\mathbb R^{2}\): \(x^{1},x^{2}\in \mathbb R^{2}\),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{6}\)</span>
+
+<!--
+
+                                                                                                                      b
+                                                                                                                            2       2
+                                                                                                                   G “ px1 q ` px2 q ´ R “ 0                                                          (1.7)--><a id="eq:463"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:463} G=\sqrt {{(x^{1})}^{2}+{(x^{2})}^{2}}-R=0
+\end{equation}
+
+</p>
+
+<p>
+One may solve the constraint to express \(x^{2}\), the dependent variable, in terms of \(x^{1}\), the indepenedent variable: \(x^{2}=\pm \sqrt {R^{2}-{(x^{1})}^{2}}\). Alternatively, if one uses polar coordinates \(x^{1}=r\cos
+\theta , x^{2}=r\sin \theta \), the constraint becomes \(G=r-R\). Hence, if one uses \(\theta ,\rho =r-R\) as new coordinates, \(q=\theta , G=\rho \).
+</p>
+<div role="note" class="footnotes">
+
+<a id="mechanics-autopage-8"></a>
+
+<p>
+<sup>1</sup>&nbsp;The explicit proof, which is not needed here, goes under the name of “implicit function theorem”.
+</p>
+
+
+</div>
+
+
+
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker">
+<span class="amsthmnameplain">Lemma</span><span class="amsthmnumberplain"> <span class="textup">1</span></span>. </span> A function \(f\) that vanishes when the constraints hold can be written as
+a combination of the functions defining the constraints:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{7}\)</span>
+
+<!--
+
+
+
+                                                                                                             f |Gm “0 “ 0 ðñ f “ g m Gm ,                                                       (1.8)--><a id="eq:53"></a><!--
+
+
+-->
+
+<p>
+
+
+\begin{equation}
+\boxed {f|_{G_m=0}=0 \iff f=g^m G_m},\label {eq:53}
+\end{equation}
+
+
+</p>
+
+<p>
+for some coefficients \(g^{m}(x)\).
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+That the condition is sufficient (\(\Longleftarrow \)) is obvious. That it is necessary (\(\Longrightarrow \)) is shown in the new coordinate system, where \(f(q^\alpha ,G_m=0)=0\) and thus
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{8}\)</span>
+
+<!--
+
+                                                                                                        ż1                                  ż1
+                                                                                                                   d                                   Bf
+                                                                                      f pq α , Gm q “        dτ      f pq α , τ Gm q “ Gm        dτ       pq α , τ Gm q,                        (1.9)--><a id="eq:30"></a><!--
+                                                                                                        0         dτ                        0         BGm
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:30} f(q^\alpha ,G_m)=\int ^1_0d\tau \frac {d}{d\tau } f(q^\alpha ,\tau G_m)=G_m\int ^1_0d\tau \frac {\partial f}{\partial G_m}(q^\alpha ,\tau G_m),
+\end{equation}
+
+</p>
+
+<p>
+so that \(g^m=\int ^1_0d\tau \frac {\partial f}{\partial G_m}(q^\alpha ,\tau G_m)\).
+</p>
+
+<p>
+In the following, we will use the notation \(f\approx 0\) for a function that vanishes when the constraints hold, so that the lemma becomes \(f\approx 0\iff f=g^mG_m\).
+</p>
+<div class="amsthmbodyplain">
+
+<ul class="list" style="list-style-type:none">
+
+
+
+<li>
+<p>
+<span class="listmarker"><a id="mechanics-autopage-9"></a>
+<span class="amsthmnameplain">Lemma</span><span class="amsthmnumberplain"> <span class="textup">2</span></span>. </span> Suppose that the constraints hold and that one restricts oneself to
+variations \(\delta x^a\) tangent to the constraint surface,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{9}\)</span>
+
+<!--
+
+
+                                                                                                                               BGm a
+                                                                                                                   Gm “ 0,         δx « 0.                                       (1.10)--><a id="eq:31"></a><!--
+                                                                                                                               Bxa
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:31} G_m=0, \quad \frac {\partial G_m}{\partial x^a}\delta x^a\approx 0.
+\end{equation}
+
+
+</p>
+
+<p>
+It follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{10}\)</span>
+
+<!--
+
+
+                                                                                                                                                      BGm
+                                                                                                 fa δxa « 0,     @δxa satisfying (1.10) ðñ fa « µm        ,                      (1.11)--><a id="eq:32"></a><!--
+                                                                                                                                                      Bxa
+
+-->
+
+<p>
+
+
+\begin{equation}
+\label {eq:32} \boxed {f_a\delta x^a\approx 0,\quad \forall \delta x^a\ {\rm satisfying}\ \eqref {eq:31} \iff f_a\approx \mu ^m \frac {\partial G_m}{\partial x^a}},
+\end{equation}
+
+
+</p>
+
+<p>
+for some \(\mu ^m(x^a)\).
+</p>
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+NB: In this lemma, the use of \(\approx \) means that these equalities in <span class="textup">(<a href="node-1.html#eq:31">1.10</a>)</span> and <span class="textup">(<a
+href="node-1.html#eq:32">1.11</a>)</span> are understood as holding when \(G_m=0\).
+</p>
+
+<p>
+That the condition is sufficient \((\Longleftarrow )\) is again direct when contracting the expression for \(f_a\) in the RHS of&nbsp;<span class="textup">(<a href="node-1.html#eq:32">1.11</a>)</span> with
+\(\delta x^a\) and using the second of&nbsp;<span class="textup">(<a href="node-1.html#eq:31">1.10</a>)</span>.
+</p>
+
+<p>
+In the adapted coordinate system \((q^\alpha ,G_m)\), variations tangent to the constraints correspond to \(\delta q^\alpha \) arbitrary, and \(\delta G_m=0\). The LHS of&nbsp;<span class="textup">(<a
+href="node-1.html#eq:32">1.11</a>)</span> becomes \(f_\alpha (q^\beta ,0)\delta q^\alpha =0\), which is equivalent to \(f_\alpha (q^\beta ,0)=0\). Since \(\mu ^m\frac {\partial
+G_m}{\partial q^\alpha }=0\), the RHS of&nbsp;<span class="textup">(<a href="node-1.html#eq:32">1.11</a>)</span> is satisfied for the \(\alpha \)-components. It is also satisfied for the \(n\) components by
+choosing \(\mu ^m=\delta ^m_n f^n \).
+</p>
+
+<p>
+In a more general coordinate system, that the condition is necessary (\(\Longrightarrow \)) follows by first subtracting from the LHS of&nbsp;<span class="textup">(<a href="node-1.html#eq:32">1.11</a>)</span> the
+combination \(\lambda ^m\frac {\partial G_m}{\partial x^a}\delta x^a\approx 0\), with arbitrary \(\lambda ^m\), which gives
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{11}\)</span>
+
+<!--
+
+                                                                                                                              BGm
+                                                                                                                   pfa ´ λm       qδxa « 0.                                      (1.12)--><a id="eq:35"></a><!--
+                                                                                                                              Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:35} (f_a-\lambda ^m\frac {\partial G_m}{\partial x^a})\delta x^a\approx 0.
+\end{equation}
+
+</p>
+
+<p>
+The regularity conditions imply that, locally, there exists an invertible matrix \(M^{m\Delta }\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{12}\)</span>
+
+<!--
+
+                                                                                                                  BGm1             BGm mΓ
+                                                                                                          M m∆            m
+                                                                                                                       « δm 1,         M     Γ
+                                                                                                                                          « δ∆ .                                 (1.13)--><a id="eq:38"></a><!--
+                                                                                                                  Bx∆              Bx∆
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:38} M^{m\Delta }\frac {\partial G_{m&apos;}}{\partial x^\Delta }\approx \delta ^m_{m&apos;},\quad \frac {\partial G_m}{\partial x^\Delta }M^{m\Gamma }\approx
+\delta ^\Gamma _\Delta .
+\end{equation}
+
+</p>
+
+<p>
+Indeed, according Lemma 1, there exists functions \(M^{\Gamma m}\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{13}\)</span>
+
+<!--
+
+
+                                                                                                                    x∆ ´ X ∆ “ M ∆m Gm ,                                        (1.14)--><a id="eq:458"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:458} x^\Delta -X^\Delta =M^{\Delta m}G_m,
+\end{equation}
+
+</p>
+
+<p>
+Conversely, when describing the surface by \(x^\Gamma -X^\Gamma \), there exists functions \(M_{m\Delta }\) such that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{14}\)</span>
+
+<!--
+
+
+                                                                                                                    Gm “ MmΓ pxΓ ´ X Γ q.                                       (1.15)--><a id="eq:459"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:459} G_m=M_{m\Gamma }(x^\Gamma -X^\Gamma ).
+\end{equation}
+
+</p>
+
+<p>
+Substituting this in the previous equation and differentiating with respect to \(x^\Delta \), it follows that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{15}\)</span>
+
+<!--
+
+
+                                                                                                                        M ∆m MmΓ « δΓ∆ .                                        (1.16)--><a id="eq:460"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:460} M^{\Delta m}M_{m\Gamma }\approx \delta ^{\Delta }_\Gamma .
+\end{equation}
+
+</p>
+
+<p>
+The second of equation <span class="textup">(<a href="node-1.html#eq:38">1.13</a>)</span> then follows by differentiating <span class="textup">(<a href="node-1.html#eq:458">1.14</a>)</span>
+with respect to \(x^\Delta \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{16}\)</span>
+
+<!--
+
+
+                                                                                                                        BM ∆m          BGm
+                                                                                                                δΓ∆ “       Γ
+                                                                                                                              Gm ` M ∆m Γ ,                                      (1.17)--><a id="eq:45"></a><!--
+                                                                                                                         Bx            Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:45} \delta ^\Delta _\Gamma =\frac {\partial M^{\Delta m}}{\partial x^\Gamma } G_m+M^{\Delta m}\frac {\partial G_m}{\partial x^\Gamma },
+\end{equation}
+
+</p>
+
+<p>
+and the first because the right and the left inverse are the same.
+</p>
+
+<p>
+In terms of the various types of variables, <span class="textup">(<a href="node-1.html#eq:35">1.12</a>)</span> may be decomposed as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{17}\)</span>
+
+<!--
+
+                                                                                                                  BGm                BGm
+                                                                                                      pf∆ ´ λm        qδx∆ ` pfα ´ λm α qδxα « 0.                                (1.18)--><a id="eq:39"></a><!--
+                                                                                                                  Bx∆                Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:39} (f_\Delta -\lambda ^m\frac {\partial G_m}{\partial x^\Delta })\delta x^\Delta +(f_\alpha -\lambda ^m\frac {\partial G_m}{\partial x^\alpha })\delta
+x^\alpha \approx 0.
+\end{equation}
+
+</p>
+
+<p>
+Since the \(\lambda ^m\) are arbitrary, we are free to fix
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{18}\)</span>
+
+<!--
+
+                                                                                                                                              BGm
+                                                                                                        λm “ M mΓ fΓ :“ µm ðñ f∆ « µm             ,                              (1.19)--><a id="eq:41"></a><!--
+                                                                                                                                              Bx∆
+
+-->
+
+<p>
+
+\begin{equation}
+\lambda ^m=M^{m\Gamma }f_\Gamma :=\mu ^m \iff f_\Delta \approx \mu ^m \frac {\partial G_m}{\partial x^\Delta }, \label {eq:41}
+\end{equation}
+
+</p>
+
+<p>
+so that the first term <span class="textup">(<a href="node-1.html#eq:39">1.18</a>)</span> vanishes. We then remain with
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{19}\)</span>
+
+<!--
+
+                                                                                                                              BGm
+                                                                                                                   pfα ´ µm       qδxα « 0.                                      (1.20)--><a id="eq:40"></a><!--
+                                                                                                                              Bxα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:40} (f_\alpha -\mu ^m\frac {\partial G_m}{\partial x^\alpha })\delta x^\alpha \approx 0.
+\end{equation}
+
+</p>
+
+<p>
+Since the variables \(x^\alpha \) are unconstrained and the variations \(\delta x^\alpha \) independent, this implies as in <span class="textup">(<a href="node-1.html#eq:34">1.1</a>)</span> that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{20}\)</span>
+
+<!--
+
+                                                                                                                                   BGm
+                                                                                                                         fα « µm       .                                         (1.21)--><a id="eq:42"></a><!--
+                                                                                                                                   Bxα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:42} f_\alpha \approx \mu ^m\frac {\partial G_m}{\partial x^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+<span class="theoremendmark">&#x25A1;</span>
+</p>
+<!--
+...... section Constrained extremisation ......
+-->
+<h4 id="autosec-10"><span class="sectionnumber">1.3&#x2003;</span>Constrained extremisation</h4>
+<a id="mechanics-autopage-10"></a>
+
+
+<a id="sec:constr-extr"></a>
+
+<p>
+Extremisation of a function \(F(x^a)\) under \(r\) constraints \(G_m=0\) can then be done in two equivalent ways:<br />
+<br />
+
+</p>
+
+<p>
+Method 1: The first is to solve the constraints as in <span class="textup">(<a href="node-1.html#eq:37">1.6</a>)</span> and to extremise the function
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{21}\)</span>
+
+<!--
+
+
+                                                                                                              F G pxα q “ F pxα , X ∆ pxβ qq .                                                                (1.22)--><a id="eq:33"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\boxed {F^G(x^\alpha )=F(x^\alpha ,X^\Delta (x^\beta ))}.\label {eq:33}
+\end{equation}
+
+</p>
+
+<p>
+In terms of the unconstrained variables \(x^\alpha \), we are back to an unconstrained extremisation problem, whose extrema are determined by
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{22}\)</span>
+
+<!--
+
+
+                                                                                                                        BF G
+                                                                                                                             “0.                                                                              (1.23)--><a id="eq:43"></a><!--
+                                                                                                                        Bxα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:43} \boxed {\frac {\partial F^G}{\partial x^\alpha }=0}.
+\end{equation}
+
+</p>
+
+<p>
+Indeed, on the one hand,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{23}\)</span>
+
+<!--
+
+
+                                                                                                       BF G   BF              BF            BX Γ
+                                                                                                            “     | x∆ “X ∆ `     |x ∆ “X ∆      .                                                            (1.24)--><a id="eq:46"></a><!--
+                                                                                                       Bxα    Bxα             BxΓ           Bxα
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:46} \frac {\partial F^G}{\partial x^\alpha }=\frac {\partial F}{\partial x^\alpha }|_{x^\Delta =X^\Delta } +\frac {\partial F}{\partial x^\Gamma }|_{x^\Delta
+=X^\Delta }\frac {\partial X^\Gamma }{\partial x^\alpha }.
+\end{equation}
+
+</p>
+
+<p>
+On the other hand, differentiating <span class="textup">(<a href="node-1.html#eq:458">1.14</a>)</span> with respect to \(x^\alpha \),
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{24}\)</span>
+
+<!--
+
+
+                                                                                                  BX Γ   BpX Γ ´ xΓ q    BM Γm          BGm
+                                                                                                     α
+                                                                                                       “       α
+                                                                                                                      “´       Gm ´ M Γm α ,                                                                  (1.25)--><a id="eq:47"></a><!--
+                                                                                                  Bx        Bx            Bxα           Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:47} \frac {\partial X^\Gamma }{\partial x^\alpha }=\frac {\partial (X^\Gamma -x^\Gamma )}{\partial x^\alpha }=-\frac {\partial M^{\Gamma m}}{\partial
+x^\alpha } G_m-M^{\Gamma m}\frac {\partial G_m}{\partial x^\alpha },
+\end{equation}
+
+</p>
+
+<p>
+so that, if \(G_m=0\), or equivalently, if one substitutes \(x^\Delta \) by \(X^\Delta \), <span class="textup">(<a href="node-1.html#eq:43">1.23</a>)</span> may be written as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{25}\)</span>
+
+<!--
+
+                                                                                                          BF       BGm                BF
+                                                                                                             α
+                                                                                                               « µm α ,        µm «       M Γm .                                                              (1.26)--><a id="eq:48"></a><!--
+                                                                                                          Bx       Bx                 BxΓ
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:48} \frac {\partial F}{\partial x^\alpha }\approx \mu ^m\frac {\partial G_m}{\partial x^\alpha },\quad \mu ^m\approx \frac {\partial F}{\partial x^\Gamma
+}M^{\Gamma m}.
+\end{equation}
+
+</p>
+
+<p>
+Furthermore, if \(G_m=0\), one may also write
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{26}\)</span>
+
+<!--
+
+                                                                                                     BF   BF Γ   BF     BGm    BGm
+                                                                                                         “ Γ δ∆ « Γ M Γm ∆ « µm ∆ .                                                                           (1.27)--><a id="eq:49"></a><!--
+                                                                                                     Bx∆  Bx     Bx     Bx     Bx
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:49} \frac {\partial F}{\partial x^\Delta }=\frac {\partial F}{\partial x^\Gamma }\delta ^\Gamma _\Delta \approx \frac {\partial F}{\partial x^\Gamma
+}M^{\Gamma m}\frac {\partial G_m}{\partial x^\Delta }\approx \mu ^m\frac {\partial G_m}{\partial x^\Delta }.
+\end{equation}
+
+</p>
+
+<p>
+by using <span class="textup">(<a href="node-1.html#eq:45">1.17</a>)</span> and the definition of \(\mu ^m\) in <span class="textup">(<a href="node-1.html#eq:48">1.26</a>)</span>.
+</p>
+
+<p>
+Method 2: Instead of restricting oneself to the space of independent variables \(x^a\), one extends the space of variables \(x^a\) by additional variables \(\lambda ^m\), called Lagrange multipliers, and one considers the unconstrained extremisation
+of the function,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{27}\)</span>
+
+<!--
+
+
+                                                                                                      F λ pxa , λm q “ F pxa q ´ λm Gm ,   δF λ “ 0 .                                                         (1.28)--><a id="eq:50"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:50} \boxed {F^\lambda (x^a,\lambda ^m)=F(x^a)-\lambda ^m G_m, \quad \delta F^\lambda =0}.
+\end{equation}
+
+</p>
+
+<p>
+By unconstrained extremisation, we understand that the variables \(x^a,\lambda ^m\) are considered as unconstrained at the outset, with independent variations \(\delta x^a,\delta \lambda ^m\).
+</p>
+
+<p>
+That this gives the same extrema can be seen as follows:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{28}\)</span>
+
+<!--
+
+                                                                                                                    BF       BGm
+                                                                                                     0 “ δF λ “ p       ´ λm     qδxa ´ δλm Gm ,                                                              (1.29)--><a id="eq:51"></a><!--
+                                                                                                                    Bxa      Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:51} 0=\delta F^\lambda =(\frac {\partial F}{\partial x^a}-\lambda ^m\frac {\partial G_m}{\partial x^a})\delta x^a-\delta \lambda ^m G_m,
+\end{equation}
+
+</p>
+
+<p>
+implies
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{1.}{29}\)</span>
+
+<!--
+
+                                                                                                              BF       BGm
+                                                                                                                  “ λm     ,       Gm “ 0.                                                                    (1.30)--><a id="eq:52"></a><!--
+                                                                                                              Bxa      Bxa
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:52} \frac {\partial F}{\partial x^a}=\lambda ^m\frac {\partial G_m}{\partial x^a},\quad G_m=0.
+\end{equation}
+
+</p>
+
+<p>
+A variation of the second equation then implies that \(\frac {\partial G_m}{\partial x^a}\delta x^a=0\), while contraction of the first equation with \(\delta x^a\) gives us <span class="textup">(<a
+href="node-1.html#eq:35">1.12</a>)</span> of the proof of lemma 2. We can then continue as in the proof of this lemma to conclude that \(\frac {\partial F}{\partial x^a}\approx \mu ^m\frac {\partial
+G_m}{\partial x^a}\) for some \(\mu ^m\), and thus that both methods define the same extrema.
+</p>
+
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

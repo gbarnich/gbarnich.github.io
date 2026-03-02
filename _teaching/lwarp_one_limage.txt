@@ -1,0 +1,6 @@
+pdfseparate -f %1 -l %1 %4_html.pdf mechanics-images/lateximagetemp-%%d.pdf
+pdfcrop --hires --margins '0 1 0 0' mechanics-images/lateximagetemp-%1.pdf mechanics-images/%3.pdf
+pdftocairo -svg -noshrink mechanics-images/%3.pdf mechanics-images/%3.svg
+del mechanics-images/%3.pdf
+del mechanics-images/lateximagetemp-%1.pdf
+exit
