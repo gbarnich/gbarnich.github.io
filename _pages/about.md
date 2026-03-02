@@ -10,7 +10,7 @@ redirect_from:
 
 ## Research Interests
 - quantum field theory and general relativity
-- black holes, gravitational waves, monopoles, dualities, higher spin gauge fields, quantm gravity
+- black holes, gravitational waves, monopoles, dualities, higher spin gauge fields, quantum gravity
 - quantization methods for gauge field theories, BRST and Batalin-Vilkovisky formalism
 - symmetries and conservation laws
   
