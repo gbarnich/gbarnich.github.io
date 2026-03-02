@@ -4,7 +4,7 @@ collection: teaching
 type: "Undergraduate course"
 permalink: /teaching/mechanics
 # venue: "University 1, Department"
-# date: 2014-01-01
+date: 2026-01-02
 # location: "City, Country"
 ---
 
