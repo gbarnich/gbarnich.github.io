@@ -8,5 +8,8 @@ date: 2026-01-02
 # location: "City, Country"
 ---
 
-Lecture notes : [pdf](), [html]
+Lecture notes 
+
+- english: [pdf](mechanics.pdf), [html](mechnaics.html)
+- french: [pdf]()
 
