@@ -6,6 +6,6 @@ permalink: /teaching/mechanics
 date: "2026-02-01"
 ---
 
-Lecture notes : [pdf](../mechanicsfiles/mechanics.pdf), [html](../mechanicsfiles/mechanics_html.html)
+Lecture notes : [pdf](../teaching/mechanicsfiles/mechanics.pdf), [html](../teaching/mechanicsfiles/mechanics_html.html)
 
 
