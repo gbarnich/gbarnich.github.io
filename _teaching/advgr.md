@@ -3,6 +3,7 @@ title: "Advanced General Relativity"
 collection: teaching
 type: "graduate course"
 # permalink: /teaching/advgr
+venue: "ULB"
 date: "2026-02-01"
 ---
 
