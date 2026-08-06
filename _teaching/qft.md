@@ -3,6 +3,7 @@ title: "Quantum Field Theory"
 collection: teaching
 type: "graduate course"
 # permalink: /teaching/qft
+venue: "ULB"
 date: "2026-09-01"
 ---
 
