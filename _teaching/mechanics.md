@@ -2,6 +2,7 @@
 title: "Classical Mechanics"
 collection: teaching
 type: "Undergraduate course"
+venue: "ULB"
 # permalink: /teaching/mechanics
 date: "2026-02-01"
 ---
